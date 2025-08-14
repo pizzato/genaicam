@@ -59,20 +59,6 @@ struct ContentView: View {
             }
 
             VStack {
-                HStack {
-                    Spacer()
-                    Button {
-                        isRealTime.toggle()
-                        showDescription = isRealTime
-                        model.cancel()
-                    } label: {
-                        Image(systemName: "text.bubble")
-                            .font(.system(size: 24))
-                            .foregroundStyle(isRealTime ? .green : .white)
-                            .padding()
-                    }
-                }
-
                 Spacer()
 
                 VStack(spacing: 16) {
@@ -84,7 +70,7 @@ struct ContentView: View {
                             .cornerRadius(8)
                     }
 
-                    HStack(spacing: 40) {
+                    HStack {
                         Button {
                             camera.backCamera.toggle()
                         } label: {
@@ -96,6 +82,8 @@ struct ContentView: View {
                                         .foregroundStyle(.white)
                                 )
                         }
+
+                        Spacer()
 
                         Button {
                             if !isRealTime, let frame = latestFrame {
@@ -123,7 +111,24 @@ struct ContentView: View {
                                         .stroke(Color.black.opacity(0.2), lineWidth: 2)
                                 )
                         }
+
+                        Spacer()
+
+                        Button {
+                            isRealTime.toggle()
+                            showDescription = isRealTime
+                            model.cancel()
+                        } label: {
+                            Circle()
+                                .fill(Color.black.opacity(0.6))
+                                .frame(width: 50, height: 50)
+                                .overlay(
+                                    Image(systemName: "text.bubble")
+                                        .foregroundStyle(isRealTime ? .green : .white)
+                                )
+                        }
                     }
+                    .padding(.horizontal, 40)
                 }
                 .padding(.bottom, 40)
             }
