@@ -12,7 +12,6 @@ import CoreImage
 import UIKit
 #endif
 #if os(iOS) && canImport(ImagePlayground)
-@available(iOS 18.0, *)
 import ImagePlayground
 #endif
 
