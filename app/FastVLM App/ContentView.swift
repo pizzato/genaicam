@@ -147,7 +147,8 @@ struct ContentView: View {
             if let frame = sampleBuffer.imageBuffer {
                 displayCont.yield(frame)
                 await MainActor.run { latestFrame = frame }
-                if await MainActor.run({ isRealTime }) {
+                let realtime = await MainActor.run { self.isRealTime }
+                if realtime {
                     analyzeCont.yield(frame)
                 }
             }
