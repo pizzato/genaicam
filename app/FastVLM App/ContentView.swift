@@ -183,6 +183,10 @@ struct ContentView: View {
             camera.attach(continuation: $0)
         }
 
+        // Ensure the camera capture session is running before we begin
+        // distributing frames so the preview is available immediately.
+        camera.start()
+
         let (framesToDisplay, displayCont) = AsyncStream.makeStream(
             of: CVImageBuffer.self,
             bufferingPolicy: .bufferingNewest(1)
@@ -210,6 +214,7 @@ struct ContentView: View {
         await MainActor.run {
             self.framesToDisplay = nil
             self.camera.detatch()
+            self.camera.stop()
         }
 
         displayCont.finish()
