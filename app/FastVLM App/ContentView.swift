@@ -31,7 +31,8 @@ struct ContentView: View {
     @State private var latestFrame: CVImageBuffer?
 
     @AppStorage("prompt") private var prompt = "Describe the image in English."
-    @State private var promptSuffix = "Output should be brief, about 15 words or less."
+//    @State private var promptSuffix = "Output should be brief, about 15 words or less."
+    @State private var promptSuffix = "Output to be used in image generation prompts"
 
     @State private var isRealTime: Bool = false
     @State private var showDescription: Bool = false
