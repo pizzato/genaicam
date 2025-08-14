@@ -37,6 +37,23 @@ struct PhotoPreviewView: View {
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped()
 
+                if generatedImage == nil {
+                    VStack {
+                        Text("Generating image")
+                            .font(.headline)
+                            .foregroundColor(.white)
+                        Text(prompt)
+                            .font(.subheadline)
+                            .foregroundColor(.white)
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding()
+                    .background(Color.black.opacity(0.6))
+                    .cornerRadius(12)
+                    .padding(.top, 30)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                }
+
                 VStack {
                     HStack(spacing: 20) {
                         if generatedImage != nil {
@@ -62,7 +79,7 @@ struct PhotoPreviewView: View {
                             VStack(spacing: 6) {
                                 Image(systemName: "photo")
                                     .font(.title)
-                                Text("Original")
+                                Text("Generated")
                                     .font(.system(size: 12, weight: .medium))
                             }
                             .foregroundColor(.white)

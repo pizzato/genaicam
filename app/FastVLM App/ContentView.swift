@@ -30,7 +30,7 @@ struct ContentView: View {
     @State private var framesToDisplay: AsyncStream<CVImageBuffer>?
     @State private var latestFrame: CVImageBuffer?
 
-    @State private var prompt = "Describe the image in English."
+    @AppStorage("prompt") private var prompt = "Describe the image in English."
     @State private var promptSuffix = "Output should be brief, about 15 words or less."
 
     @State private var isRealTime: Bool = false
@@ -44,7 +44,7 @@ struct ContentView: View {
     @available(iOS 18.0, *)
     @State private var imageGenerator = PlaygroundImageGenerator()
     @available(iOS 18.0, *)
-    @State private var playgroundStyle: PlaygroundStyle = .sketch
+    @AppStorage("playgroundStyle") private var playgroundStyle: PlaygroundStyle = .sketch
 #endif
 
     var body: some View {
