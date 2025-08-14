@@ -18,6 +18,7 @@ struct PhotoPreviewView: View {
     @State private var showPrompt = false
     @State private var showShare = false
     @State private var selection: ImageSelection = .original
+    private let buttonSize: CGFloat = 70
 
     enum ImageSelection: String, CaseIterable, Identifiable {
         case original
@@ -35,28 +36,32 @@ struct PhotoPreviewView: View {
             VStack {
                 HStack {
                     if generatedImage != nil {
-                        Picker("", selection: $selection) {
-                            Text("Original").tag(ImageSelection.original)
-                            Text("Generated").tag(ImageSelection.generated)
+                        Button {
+                            selection = selection == .original ? .generated : .original
+                        } label: {
+                            Text(selection == .generated ? "Original" : "Generated")
+                                .frame(width: buttonSize, height: buttonSize)
+                                .background(Color.black)
+                                .cornerRadius(12)
                         }
-                        .pickerStyle(.segmented)
-                        .padding(8)
-                        .background(.ultraThinMaterial)
-                        .cornerRadius(8)
                     } else {
-                        Label("Original", systemImage: "sparkles")
-                            .padding(8)
-                            .background(.ultraThinMaterial)
-                            .cornerRadius(8)
+                        Text("Original")
+                            .frame(width: buttonSize, height: buttonSize)
+                            .background(Color.black)
+                            .cornerRadius(12)
                     }
                     Spacer()
                     Button {
                         showPrompt = true
                     } label: {
-                        Label("Info", systemImage: "info.circle")
-                            .padding(8)
-                            .background(.ultraThinMaterial)
-                            .cornerRadius(8)
+                        VStack {
+                            Image(systemName: "info.circle")
+                            Text("Info")
+                                .font(.caption)
+                        }
+                        .frame(width: buttonSize, height: buttonSize)
+                        .background(Color.black)
+                        .cornerRadius(12)
                     }
                 }
                 .padding()
@@ -73,7 +78,7 @@ struct PhotoPreviewView: View {
                         .padding()
                 }
 
-                HStack(spacing: 40) {
+                HStack(spacing: 20) {
                     Button {
                         onRetake()
                     } label: {
@@ -82,6 +87,9 @@ struct PhotoPreviewView: View {
                             Text("New Photo")
                                 .font(.caption)
                         }
+                        .frame(width: buttonSize, height: buttonSize)
+                        .background(Color.black)
+                        .cornerRadius(12)
                     }
 
                     Button {
@@ -92,6 +100,9 @@ struct PhotoPreviewView: View {
                             Text("Save")
                                 .font(.caption)
                         }
+                        .frame(width: buttonSize, height: buttonSize)
+                        .background(Color.black)
+                        .cornerRadius(12)
                     }
 
                     Button {
@@ -102,6 +113,9 @@ struct PhotoPreviewView: View {
                             Text("Share")
                                 .font(.caption)
                         }
+                        .frame(width: buttonSize, height: buttonSize)
+                        .background(Color.black)
+                        .cornerRadius(12)
                     }
                     .sheet(isPresented: $showShare) {
                         ShareSheet(activityItems: [image, generatedImage].compactMap { $0 })
@@ -109,6 +123,11 @@ struct PhotoPreviewView: View {
                 }
                 .padding(.bottom, 40)
                 .foregroundStyle(.white)
+            }
+        }
+        .onChange(of: generatedImage) { newValue in
+            if newValue != nil {
+                selection = .generated
             }
         }
         .alert("Prompt", isPresented: $showPrompt) {
