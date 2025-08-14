@@ -7,7 +7,7 @@ import Foundation
 #if os(iOS)
 import UIKit
 #if canImport(ImagePlayground)
-@available(iOS 18.0, *)
+@available(iOS 18.4, *)
 import ImagePlayground
 
 /// Wrapper around Image Playground to generate images in the background.
