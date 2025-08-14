@@ -43,6 +43,8 @@ struct ContentView: View {
 #if os(iOS) && canImport(ImagePlayground)
     @available(iOS 18.0, *)
     @State private var imageGenerator = PlaygroundImageGenerator()
+    @available(iOS 18.0, *)
+    @State private var playgroundStyle: PlaygroundStyle = .sketch
 #endif
 
     var body: some View {
@@ -95,7 +97,7 @@ struct ContentView: View {
 #if os(iOS) && canImport(ImagePlayground)
                                 if #available(iOS 18.0, *), let capturedImage {
                                     Task {
-                                        generatedImage = await imageGenerator.generate(from: capturedImage)
+                                        generatedImage = await imageGenerator.generate(from: capturedImage, style: playgroundStyle)
                                     }
                                 }
 #endif
@@ -148,7 +150,9 @@ struct ContentView: View {
                 PhotoPreviewView(
                     image: capturedImage,
                     generatedImage: $generatedImage,
-                    description: $model.output
+                    description: $model.output,
+                    prompt: $prompt,
+                    style: $playgroundStyle
                 ) {
                     showPreview = false
                     model.output = ""

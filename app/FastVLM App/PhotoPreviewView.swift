@@ -12,10 +12,13 @@ struct PhotoPreviewView: View {
     let image: UIImage
     @Binding var generatedImage: UIImage?
     @Binding var description: String
+    @Binding var prompt: String
+    @Binding var style: PlaygroundStyle
     var onRetake: () -> Void
 
     @State private var showingDescription = false
     @State private var showShare = false
+    @State private var showSettings = false
     @State private var selection: ImageSelection = .original
     private let buttonSize: CGFloat = 80
 
@@ -72,8 +75,26 @@ struct PhotoPreviewView: View {
                             )
                         }
 
-                        Spacer()
+                        Button {
+                            showSettings = true
+                        } label: {
+                            VStack(spacing: 6) {
+                                Image(systemName: "gearshape.fill")
+                                    .font(.title)
+                                Text("Settings")
+                                    .font(.system(size: 12, weight: .medium))
+                            }
+                            .foregroundColor(.white)
+                            .frame(width: buttonSize, height: buttonSize)
+                            .background(Color.black.opacity(0.8))
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            )
+                        }
 
+        
                         Button {
                             showingDescription.toggle()
                         } label: {
@@ -93,6 +114,7 @@ struct PhotoPreviewView: View {
                             )
                         }
                     }
+                    .frame(maxWidth: .infinity)
                     .padding(.horizontal, 30)
                     .padding(.top, 60)
 
@@ -159,6 +181,7 @@ struct PhotoPreviewView: View {
                             ShareSheet(activityItems: [image, generatedImage].compactMap { $0 })
                         }
                     }
+                    .frame(maxWidth: .infinity)
                     .padding(.horizontal, 30)
                     .padding(.bottom, 50)
                 }
@@ -205,10 +228,18 @@ struct PhotoPreviewView: View {
             }
         }
         .ignoresSafeArea()
-        .onChange(of: generatedImage) { newValue in
-            if newValue != nil {
-                selection = .generated
+        // Use the new two-parameter `onChange` available in iOS 17 while
+        // falling back to the legacy single-parameter version on older
+        // systems to avoid deprecation warnings during compilation.
+        .modifier(
+            OnChangeModifier(generatedImage: $generatedImage) { newValue in
+                if newValue != nil {
+                    selection = .generated
+                }
             }
+        )
+        .sheet(isPresented: $showSettings) {
+            SettingsView(prompt: $prompt, style: $style)
         }
     }
 
@@ -232,5 +263,25 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+/// View modifier that applies the appropriate `onChange` variant depending on
+/// the iOS version. This keeps the main view declarative while avoiding the
+/// deprecation warning on iOS 17 and above.
+private struct OnChangeModifier: ViewModifier {
+    @Binding var generatedImage: UIImage?
+    let action: (UIImage?) -> Void
+
+    func body(content: Content) -> some View {
+        if #available(iOS 17, *) {
+            content.onChange(of: generatedImage, initial: false) { _, newValue in
+                action(newValue)
+            }
+        } else {
+            content.onChange(of: generatedImage) { newValue in
+                action(newValue)
+            }
+        }
+    }
 }
 #endif
