@@ -38,7 +38,18 @@ class PlaygroundImageGenerator {
             }
             guard let creator, let cgImage = image.cgImage else { return nil }
             let concepts: [ImagePlaygroundConcept] = [.image(cgImage)]
-            let playgroundStyle = ImagePlaygroundStyle(rawValue: style.rawValue) ?? .sketch
+
+            // Map our simple `PlaygroundStyle` to the corresponding
+            // `ImagePlaygroundStyle`. The ImagePlayground API doesn't expose
+            // a `RawRepresentable` initializer, so we translate explicitly.
+            let playgroundStyle: ImagePlaygroundStyle
+            switch style {
+            case .sketch:
+                playgroundStyle = .sketch
+            case .realistic:
+                playgroundStyle = .realistic
+            }
+
             let images = creator.images(for: concepts, style: playgroundStyle, limit: 1)
             for try await result in images {
                 return UIImage(cgImage: result.cgImage)

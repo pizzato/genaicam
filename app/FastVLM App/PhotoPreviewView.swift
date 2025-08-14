@@ -228,11 +228,16 @@ struct PhotoPreviewView: View {
             }
         }
         .ignoresSafeArea()
-        .onChange(of: generatedImage) { _, newValue in
-            if newValue != nil {
-                selection = .generated
+        // Use the new two-parameter `onChange` available in iOS 17 while
+        // falling back to the legacy single-parameter version on older
+        // systems to avoid deprecation warnings during compilation.
+        .modifier(
+            OnChangeModifier(generatedImage: $generatedImage) { newValue in
+                if newValue != nil {
+                    selection = .generated
+                }
             }
-        }
+        )
         .sheet(isPresented: $showSettings) {
             SettingsView(prompt: $prompt, style: $style)
         }
@@ -258,5 +263,25 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+/// View modifier that applies the appropriate `onChange` variant depending on
+/// the iOS version. This keeps the main view declarative while avoiding the
+/// deprecation warning on iOS 17 and above.
+private struct OnChangeModifier: ViewModifier {
+    @Binding var generatedImage: UIImage?
+    let action: (UIImage?) -> Void
+
+    func body(content: Content) -> some View {
+        if #available(iOS 17, *) {
+            content.onChange(of: generatedImage, initial: false) { _, newValue in
+                action(newValue)
+            }
+        } else {
+            content.onChange(of: generatedImage) { newValue in
+                action(newValue)
+            }
+        }
+    }
 }
 #endif
