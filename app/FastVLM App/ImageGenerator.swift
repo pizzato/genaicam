@@ -13,7 +13,8 @@ import ImagePlayground
 /// Style options for Image Playground generation.
 enum PlaygroundStyle: String, CaseIterable, Identifiable {
     case sketch
-    case realistic
+    case illustration
+    case animation
     var id: String { rawValue }
 }
 
@@ -46,8 +47,10 @@ class PlaygroundImageGenerator {
             switch style {
             case .sketch:
                 playgroundStyle = .sketch
-            case .realistic:
-                playgroundStyle = .realistic
+            case .illustration:
+                playgroundStyle = .illustration
+            case .animation:
+                playgroundStyle = .animation
             }
 
             let images = creator.images(for: concepts, style: playgroundStyle, limit: 1)
