@@ -11,6 +11,9 @@ import CoreImage
 #if os(iOS)
 import UIKit
 #endif
+#if os(iOS)
+import ImagePlayground
+#endif
 
 // support swift 6
 extension CVImageBuffer: @unchecked @retroactive Sendable {}
@@ -34,6 +37,10 @@ struct ContentView: View {
     @State private var showDescription: Bool = false
     @State private var capturedImage: UIImage?
     @State private var showPreview: Bool = false
+#if os(iOS)
+    @State private var generatedImage: UIImage?
+    @State private var imageGenerator = PlaygroundImageGenerator()
+#endif
 
     var body: some View {
         ZStack {
@@ -88,8 +95,18 @@ struct ContentView: View {
                         if !isRealTime, let frame = latestFrame {
                             processSingleFrame(frame)
                             capturedImage = makeUIImage(from: frame)
+#if os(iOS)
+                            generatedImage = nil
+#endif
                             showPreview = true
                             showDescription = true
+#if os(iOS)
+                            if let capturedImage {
+                                Task {
+                                    generatedImage = await imageGenerator.generate(from: capturedImage)
+                                }
+                            }
+#endif
                         }
                     } label: {
                         Circle()
@@ -114,11 +131,11 @@ struct ContentView: View {
         .onDisappear {
             UIApplication.shared.isIdleTimerDisabled = false
         }
-        #endif
         .fullScreenCover(isPresented: $showPreview) {
             if let capturedImage {
                 PhotoPreviewView(
                     image: capturedImage,
+                    generatedImage: $generatedImage,
                     description: $model.output,
                     prompt: prompt
                 ) {
@@ -127,6 +144,7 @@ struct ContentView: View {
                 }
             }
         }
+        #endif
     }
 
     func analyzeVideoFrames(_ frames: AsyncStream<CVImageBuffer>) async {
