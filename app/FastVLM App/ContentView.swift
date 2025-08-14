@@ -54,16 +54,6 @@ struct ContentView: View {
                     action: nil
                 )
                 .ignoresSafeArea()
-                #if !os(macOS)
-                .overlay(alignment: .topLeading) {
-                    CameraControlsView(
-                        backCamera: $camera.backCamera,
-                        device: $camera.device,
-                        devices: $camera.devices
-                    )
-                    .padding()
-                }
-                #endif
             } else {
                 Color.black.ignoresSafeArea()
             }
@@ -94,31 +84,45 @@ struct ContentView: View {
                             .cornerRadius(8)
                     }
 
-                    Button {
-                        if !isRealTime, let frame = latestFrame {
-                            processSingleFrame(frame)
-                            capturedImage = makeUIImage(from: frame)
+                    HStack(spacing: 40) {
+                        Button {
+                            camera.backCamera.toggle()
+                        } label: {
+                            Circle()
+                                .fill(Color.black.opacity(0.6))
+                                .frame(width: 50, height: 50)
+                                .overlay(
+                                    Image(systemName: "arrow.triangle.2.circlepath.camera")
+                                        .foregroundStyle(.white)
+                                )
+                        }
+
+                        Button {
+                            if !isRealTime, let frame = latestFrame {
+                                processSingleFrame(frame)
+                                capturedImage = makeUIImage(from: frame)
 #if os(iOS)
-                            generatedImage = nil
+                                generatedImage = nil
 #endif
 #if os(iOS) && canImport(ImagePlayground)
-                            if #available(iOS 18.0, *), let capturedImage {
-                                Task {
-                                    generatedImage = await imageGenerator.generate(from: capturedImage)
+                                if #available(iOS 18.0, *), let capturedImage {
+                                    Task {
+                                        generatedImage = await imageGenerator.generate(from: capturedImage)
+                                    }
                                 }
-                            }
 #endif
-                            showPreview = true
-                            showDescription = true
+                                showPreview = true
+                                showDescription = true
+                            }
+                        } label: {
+                            Circle()
+                                .fill(Color.white)
+                                .frame(width: 70, height: 70)
+                                .overlay(
+                                    Circle()
+                                        .stroke(Color.black.opacity(0.2), lineWidth: 2)
+                                )
                         }
-                    } label: {
-                        Circle()
-                            .fill(Color.white)
-                            .frame(width: 70, height: 70)
-                            .overlay(
-                                Circle()
-                                    .stroke(Color.black.opacity(0.2), lineWidth: 2)
-                            )
                     }
                 }
                 .padding(.bottom, 40)
