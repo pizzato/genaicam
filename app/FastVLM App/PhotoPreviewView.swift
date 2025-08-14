@@ -114,6 +114,7 @@ struct PhotoPreviewView: View {
                             )
                         }
                     }
+                    .frame(maxWidth: .infinity)
                     .padding(.horizontal, 30)
                     .padding(.top, 60)
 
@@ -180,6 +181,7 @@ struct PhotoPreviewView: View {
                             ShareSheet(activityItems: [image, generatedImage].compactMap { $0 })
                         }
                     }
+                    .frame(maxWidth: .infinity)
                     .padding(.horizontal, 30)
                     .padding(.bottom, 50)
                 }
@@ -226,7 +228,7 @@ struct PhotoPreviewView: View {
             }
         }
         .ignoresSafeArea()
-        .onChange(of: generatedImage) { newValue in
+        .onChange(of: generatedImage) { _, newValue in
             if newValue != nil {
                 selection = .generated
             }
