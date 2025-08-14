@@ -7,6 +7,10 @@ import AVFoundation
 import MLXLMCommon
 import SwiftUI
 import Video
+import CoreImage
+#if os(iOS)
+import UIKit
+#endif
 
 // support swift 6
 extension CVImageBuffer: @unchecked @retroactive Sendable {}
@@ -28,6 +32,8 @@ struct ContentView: View {
 
     @State private var isRealTime: Bool = false
     @State private var showDescription: Bool = false
+    @State private var capturedImage: UIImage?
+    @State private var showPreview: Bool = false
 
     var body: some View {
         ZStack {
@@ -81,6 +87,8 @@ struct ContentView: View {
                     Button {
                         if !isRealTime, let frame = latestFrame {
                             processSingleFrame(frame)
+                            capturedImage = makeUIImage(from: frame)
+                            showPreview = true
                             showDescription = true
                         }
                     } label: {
@@ -107,6 +115,18 @@ struct ContentView: View {
             UIApplication.shared.isIdleTimerDisabled = false
         }
         #endif
+        .fullScreenCover(isPresented: $showPreview) {
+            if let capturedImage {
+                PhotoPreviewView(
+                    image: capturedImage,
+                    description: $model.output,
+                    prompt: prompt
+                ) {
+                    showPreview = false
+                    model.output = ""
+                }
+            }
+        }
     }
 
     func analyzeVideoFrames(_ frames: AsyncStream<CVImageBuffer>) async {
@@ -182,6 +202,17 @@ struct ContentView: View {
         Task {
             await model.generate(userInput)
         }
+    }
+
+    func makeUIImage(from buffer: CVImageBuffer) -> UIImage? {
+        #if os(iOS)
+        let ciImage = CIImage(cvPixelBuffer: buffer)
+        let context = CIContext()
+        if let cgImage = context.createCGImage(ciImage, from: ciImage.extent) {
+            return UIImage(cgImage: cgImage)
+        }
+        #endif
+        return nil
     }
 }
 
