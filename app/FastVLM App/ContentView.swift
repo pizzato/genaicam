@@ -11,7 +11,8 @@ import CoreImage
 #if os(iOS)
 import UIKit
 #endif
-#if os(iOS)
+#if os(iOS) && canImport(ImagePlayground)
+@available(iOS 18.0, *)
 import ImagePlayground
 #endif
 
@@ -39,6 +40,9 @@ struct ContentView: View {
     @State private var showPreview: Bool = false
 #if os(iOS)
     @State private var generatedImage: UIImage?
+#endif
+#if os(iOS) && canImport(ImagePlayground)
+    @available(iOS 18.0, *)
     @State private var imageGenerator = PlaygroundImageGenerator()
 #endif
 
@@ -98,15 +102,15 @@ struct ContentView: View {
 #if os(iOS)
                             generatedImage = nil
 #endif
-                            showPreview = true
-                            showDescription = true
-#if os(iOS)
-                            if let capturedImage {
+#if os(iOS) && canImport(ImagePlayground)
+                            if #available(iOS 18.0, *), let capturedImage {
                                 Task {
                                     generatedImage = await imageGenerator.generate(from: capturedImage)
                                 }
                             }
 #endif
+                            showPreview = true
+                            showDescription = true
                         }
                     } label: {
                         Circle()
