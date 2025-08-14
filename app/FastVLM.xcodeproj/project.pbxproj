@@ -56,7 +56,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		019A3E0A2D78E6A00055F93B /* GenAICam App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "GenAICam App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		019A3E0A2D78E6A00055F93B /* FastVLM App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FastVLM App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		12FFAF3D2DC93583009C4EFA /* get_pretrained_mlx_model.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = get_pretrained_mlx_model.sh; sourceTree = "<group>"; };
 		12FFAF3E2DC93583009C4EFA /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		C35372AE2D08C32D00474D34 /* Video.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Video.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -64,12 +64,12 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		120A44852D9B05A900E244A3 /* Exceptions for "FastVLM App" folder in "GenAICam App" target */ = {
+		120A44852D9B05A900E244A3 /* Exceptions for "FastVLM App" folder in "FastVLM App" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 019A3E092D78E6A00055F93B /* GenAICam App */;
+			target = 019A3E092D78E6A00055F93B /* FastVLM App */;
 		};
 		C35372B92D08C32D00474D34 /* Exceptions for "Video" folder in "Video" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -91,7 +91,7 @@
 		019A3E0B2D78E6A00055F93B /* FastVLM App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				120A44852D9B05A900E244A3 /* Exceptions for "FastVLM App" folder in "GenAICam App" target */,
+				120A44852D9B05A900E244A3 /* Exceptions for "FastVLM App" folder in "FastVLM App" target */,
 			);
 			path = "FastVLM App";
 			sourceTree = "<group>";
@@ -174,7 +174,7 @@
 			isa = PBXGroup;
 			children = (
 				C35372AE2D08C32D00474D34 /* Video.framework */,
-				019A3E0A2D78E6A00055F93B /* GenAICam App.app */,
+				019A3E0A2D78E6A00055F93B /* FastVLM App.app */,
 				C39BB3E62D79082A005DB8FB /* FastVLM.framework */,
 			);
 			name = Products;
@@ -207,9 +207,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		019A3E092D78E6A00055F93B /* GenAICam App */ = {
+		019A3E092D78E6A00055F93B /* FastVLM App */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 019A3E182D78E6A20055F93B /* Build configuration list for PBXNativeTarget "GenAICam App" */;
+			buildConfigurationList = 019A3E182D78E6A20055F93B /* Build configuration list for PBXNativeTarget "FastVLM App" */;
 			buildPhases = (
 				019A3E062D78E6A00055F93B /* Sources */,
 				019A3E072D78E6A00055F93B /* Frameworks */,
@@ -225,7 +225,7 @@
 			fileSystemSynchronizedGroups = (
 				019A3E0B2D78E6A00055F93B /* FastVLM App */,
 			);
-			name = "GenAICam App";
+			name = "FastVLM App";
 			packageProductDependencies = (
 				019A3E192D78E7370055F93B /* MLX */,
 				019A3E1B2D78E73E0055F93B /* MLXLMCommon */,
@@ -233,7 +233,7 @@
 				019A3E1F2D78E74C0055F93B /* MLXVLM */,
 			);
 			productName = FastVLMCameraExample;
-			productReference = 019A3E0A2D78E6A00055F93B /* GenAICam App.app */;
+			productReference = 019A3E0A2D78E6A00055F93B /* FastVLM App.app */;
 			productType = "com.apple.product-type.application";
 		};
 		C35372AD2D08C32D00474D34 /* Video */ = {
@@ -310,7 +310,7 @@
 					};
 				};
 			};
-			buildConfigurationList = C35EDB672D07699400757E80 /* Build configuration list for PBXProject "GenAICam" */;
+			buildConfigurationList = C35EDB672D07699400757E80 /* Build configuration list for PBXProject "FastVLM" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -330,7 +330,7 @@
 			projectRoot = "";
 			targets = (
 				C35372AD2D08C32D00474D34 /* Video */,
-				019A3E092D78E6A00055F93B /* GenAICam App */,
+				019A3E092D78E6A00055F93B /* FastVLM App */,
 				C39BB3E52D79082A005DB8FB /* FastVLM */,
 			);
 		};
@@ -434,14 +434,13 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_ENTITLEMENTS = "FastVLM App/FastVLM.entitlements";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 0.1.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_ASSET_PATHS = "\"FastVLM App/Preview Content\"";
-				DEVELOPMENT_TEAM = 573X6DYYZ4;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -463,11 +462,8 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FastVLM App/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = GenAICam;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
+				INFOPLIST_KEY_CFBundleDisplayName = FastVLM;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use camera to get live feed of images";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Allow GenAICam to save photos to your library.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app needs permission to photos to record the photos taken";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -478,7 +474,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
@@ -487,7 +483,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = ml.pizzato.GenAICam;
+				PRODUCT_BUNDLE_IDENTIFIER = com.apple.ml.FastVLM;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -536,14 +532,13 @@
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_ENTITLEMENTS = "FastVLM App/FastVLM.entitlements";
-				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 0.1.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"FastVLM App/Preview Content\"";
-				DEVELOPMENT_TEAM = 573X6DYYZ4;
+				DEVELOPMENT_TEAM = "";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_PREVIEWS = YES;
@@ -559,11 +554,8 @@
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FastVLM App/Info.plist";
-				INFOPLIST_KEY_CFBundleDisplayName = GenAICam;
-				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
+				INFOPLIST_KEY_CFBundleDisplayName = FastVLM;
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use camera to get live feed of images";
-				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Allow GenAICam to save photos to your library.";
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app needs permission to photos to record the photos taken";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -574,7 +566,7 @@
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
 				INFOPLIST_KEY_UISupportedInterfaceOrientations = UIInterfaceOrientationPortrait;
-				IPHONEOS_DEPLOYMENT_TARGET = 18.4;
+				IPHONEOS_DEPLOYMENT_TARGET = 18.2;
 				LD_RUNPATH_SEARCH_PATHS = "@executable_path/Frameworks";
 				"LD_RUNPATH_SEARCH_PATHS[sdk=macosx*]" = "@executable_path/../Frameworks";
 				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
@@ -582,7 +574,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = ml.pizzato.GenAICam;
+				PRODUCT_BUNDLE_IDENTIFIER = com.apple.ml.FastVLM;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = auto;
 				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
@@ -821,7 +813,6 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app needs permission to photos to record the photos taken";
 				ONLY_ACTIVE_ARCH = YES;
 			};
 			name = Debug;
@@ -858,7 +849,6 @@
 				GCC_WARN_UNINITIALIZED_AUTOS = YES;
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
-				INFOPLIST_KEY_NSPhotoLibraryUsageDescription = "This app needs permission to photos to record the photos taken";
 			};
 			name = Release;
 		};
@@ -1057,7 +1047,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		019A3E182D78E6A20055F93B /* Build configuration list for PBXNativeTarget "GenAICam App" */ = {
+		019A3E182D78E6A20055F93B /* Build configuration list for PBXNativeTarget "FastVLM App" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				019A3E162D78E6A20055F93B /* Debug */,
@@ -1075,7 +1065,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		C35EDB672D07699400757E80 /* Build configuration list for PBXProject "GenAICam" */ = {
+		C35EDB672D07699400757E80 /* Build configuration list for PBXProject "FastVLM" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C35EDB682D07699400757E80 /* Debug */,
@@ -1100,8 +1090,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/ml-explore/mlx-swift-examples";
 			requirement = {
-				kind = exactVersion;
-				version = 2.21.2;
+				kind = upToNextMajorVersion;
+				minimumVersion = 2.21.2;
 			};
 		};
 		C35EDB8A2D07777E00757E80 /* XCRemoteSwiftPackageReference "mlx-swift" */ = {
@@ -1116,8 +1106,8 @@
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/huggingface/swift-transformers";
 			requirement = {
-				kind = exactVersion;
-				version = 0.1.18;
+				kind = upToNextMajorVersion;
+				minimumVersion = 0.1.18;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */
