@@ -10,24 +10,40 @@ import UIKit
 
 struct PhotoPreviewView: View {
     let image: UIImage
+    @Binding var generatedImage: UIImage?
     @Binding var description: String
     let prompt: String
     var onRetake: () -> Void
 
     @State private var showPrompt = false
     @State private var showShare = false
+    @State private var selection: ImageSelection = .original
+
+    enum ImageSelection: String, CaseIterable, Identifiable {
+        case original
+        case generated
+        var id: String { rawValue }
+    }
 
     var body: some View {
         ZStack {
-            Image(uiImage: image)
+            Image(uiImage: selection == .original ? image : (generatedImage ?? image))
                 .resizable()
                 .scaledToFit()
                 .ignoresSafeArea()
 
             VStack {
                 HStack {
-                    Button {
-                    } label: {
+                    if generatedImage != nil {
+                        Picker("", selection: $selection) {
+                            Text("Original").tag(ImageSelection.original)
+                            Text("Generated").tag(ImageSelection.generated)
+                        }
+                        .pickerStyle(.segmented)
+                        .padding(8)
+                        .background(.ultraThinMaterial)
+                        .cornerRadius(8)
+                    } else {
                         Label("Original", systemImage: "sparkles")
                             .padding(8)
                             .background(.ultraThinMaterial)
@@ -88,7 +104,7 @@ struct PhotoPreviewView: View {
                         }
                     }
                     .sheet(isPresented: $showShare) {
-                        ShareSheet(activityItems: [image])
+                        ShareSheet(activityItems: [image, generatedImage].compactMap { $0 })
                     }
                 }
                 .padding(.bottom, 40)
@@ -106,6 +122,9 @@ struct PhotoPreviewView: View {
         PHPhotoLibrary.requestAuthorization { status in
             if status == .authorized || status == .limited {
                 UIImageWriteToSavedPhotosAlbum(image, nil, nil, nil)
+                if let generatedImage {
+                    UIImageWriteToSavedPhotosAlbum(generatedImage, nil, nil, nil)
+                }
             }
         }
     }
