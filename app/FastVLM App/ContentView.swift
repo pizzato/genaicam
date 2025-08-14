@@ -143,8 +143,7 @@ struct ContentView: View {
                 PhotoPreviewView(
                     image: capturedImage,
                     generatedImage: $generatedImage,
-                    description: $model.output,
-                    prompt: prompt
+                    description: $model.output
                 ) {
                     showPreview = false
                     model.output = ""
