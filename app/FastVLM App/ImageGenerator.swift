@@ -6,10 +6,13 @@
 import Foundation
 #if os(iOS)
 import UIKit
+#if canImport(ImagePlayground)
+@available(iOS 18.0, *)
 import ImagePlayground
 
 /// Wrapper around Image Playground to generate images in the background.
 @MainActor
+@available(iOS 18.0, *)
 class PlaygroundImageGenerator {
     private let session: PlaygroundSession?
 
@@ -31,4 +34,16 @@ class PlaygroundImageGenerator {
         }
     }
 }
+#else
+@MainActor
+@available(iOS 18.0, *)
+class PlaygroundImageGenerator {
+    init() {}
+
+    /// Stub generator when ImagePlayground is unavailable.
+    /// - Parameter image: Source image.
+    /// - Returns: Always nil.
+    func generate(from image: UIImage) async -> UIImage? { nil }
+}
+#endif
 #endif
