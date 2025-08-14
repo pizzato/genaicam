@@ -12,13 +12,12 @@ struct PhotoPreviewView: View {
     let image: UIImage
     @Binding var generatedImage: UIImage?
     @Binding var description: String
-    let prompt: String
     var onRetake: () -> Void
 
-    @State private var showPrompt = false
+    @State private var showingDescription = false
     @State private var showShare = false
     @State private var selection: ImageSelection = .original
-    private let buttonSize: CGFloat = 70
+    private let buttonSize: CGFloat = 80
 
     enum ImageSelection: String, CaseIterable, Identifiable {
         case original
@@ -27,113 +26,189 @@ struct PhotoPreviewView: View {
     }
 
     var body: some View {
-        ZStack {
-            Image(uiImage: selection == .original ? image : (generatedImage ?? image))
-                .resizable()
-                .scaledToFit()
-                .ignoresSafeArea()
+        GeometryReader { geometry in
+            ZStack {
+                Image(uiImage: selection == .original ? image : (generatedImage ?? image))
+                    .resizable()
+                    .aspectRatio(contentMode: .fill)
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .clipped()
 
-            VStack {
-                HStack {
-                    if generatedImage != nil {
-                        Button {
-                            selection = selection == .original ? .generated : .original
-                        } label: {
-                            Text(selection == .generated ? "Original" : "Generated")
+                VStack {
+                    HStack(spacing: 20) {
+                        if generatedImage != nil {
+                            Button {
+                                selection = selection == .original ? .generated : .original
+                            } label: {
+                                VStack(spacing: 6) {
+                                    Image(systemName: selection == .original ? "photo" : "sparkles")
+                                        .font(.title)
+                                    Text(selection == .original ? "Generated" : "Original")
+                                        .font(.system(size: 12, weight: .medium))
+                                }
+                                .foregroundColor(.white)
                                 .frame(width: buttonSize, height: buttonSize)
-                                .background(Color.black)
-                                .cornerRadius(12)
-                        }
-                    } else {
-                        Text("Original")
+                                .background(Color.black.opacity(0.8))
+                                .cornerRadius(16)
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 16)
+                                        .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                                )
+                            }
+                        } else {
+                            VStack(spacing: 6) {
+                                Image(systemName: "photo")
+                                    .font(.title)
+                                Text("Original")
+                                    .font(.system(size: 12, weight: .medium))
+                            }
+                            .foregroundColor(.white)
                             .frame(width: buttonSize, height: buttonSize)
-                            .background(Color.black)
-                            .cornerRadius(12)
+                            .background(Color.black.opacity(0.8))
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            )
+                        }
+
+                        Spacer()
+
+                        Button {
+                            showingDescription.toggle()
+                        } label: {
+                            VStack(spacing: 6) {
+                                Image(systemName: "text.bubble.fill")
+                                    .font(.title)
+                                Text("Info")
+                                    .font(.system(size: 12, weight: .medium))
+                            }
+                            .foregroundColor(.white)
+                            .frame(width: buttonSize, height: buttonSize)
+                            .background(Color.black.opacity(0.8))
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            )
+                        }
                     }
+                    .padding(.horizontal, 30)
+                    .padding(.top, 60)
+
                     Spacer()
-                    Button {
-                        showPrompt = true
-                    } label: {
-                        VStack {
-                            Image(systemName: "info.circle")
-                            Text("Info")
-                                .font(.caption)
+
+                    HStack(spacing: 20) {
+                        Button {
+                            onRetake()
+                        } label: {
+                            VStack(spacing: 6) {
+                                Image(systemName: "camera")
+                                    .font(.title)
+                                Text("New Photo")
+                                    .font(.system(size: 12, weight: .medium))
+                            }
+                            .foregroundColor(.white)
+                            .frame(width: buttonSize, height: buttonSize)
+                            .background(Color.black.opacity(0.8))
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            )
                         }
-                        .frame(width: buttonSize, height: buttonSize)
-                        .background(Color.black)
-                        .cornerRadius(12)
+
+                        Button {
+                            savePhoto()
+                        } label: {
+                            VStack(spacing: 6) {
+                                Image(systemName: "square.and.arrow.down")
+                                    .font(.title)
+                                Text("Save")
+                                    .font(.system(size: 12, weight: .medium))
+                            }
+                            .foregroundColor(.white)
+                            .frame(width: buttonSize, height: buttonSize)
+                            .background(Color.black.opacity(0.8))
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            )
+                        }
+
+                        Button {
+                            showShare = true
+                        } label: {
+                            VStack(spacing: 6) {
+                                Image(systemName: "square.and.arrow.up")
+                                    .font(.title)
+                                Text("Share")
+                                    .font(.system(size: 12, weight: .medium))
+                            }
+                            .foregroundColor(.white)
+                            .frame(width: buttonSize, height: buttonSize)
+                            .background(Color.black.opacity(0.8))
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            )
+                        }
+                        .sheet(isPresented: $showShare) {
+                            ShareSheet(activityItems: [image, generatedImage].compactMap { $0 })
+                        }
+                    }
+                    .padding(.horizontal, 30)
+                    .padding(.bottom, 50)
+                }
+
+                if showingDescription {
+                    ZStack {
+                        Color.black.opacity(0.7)
+                            .ignoresSafeArea()
+                            .onTapGesture {
+                                showingDescription = false
+                            }
+
+                        VStack(spacing: 20) {
+                            Text("Description")
+                                .font(.title2)
+                                .fontWeight(.bold)
+                                .foregroundColor(.white)
+
+                            ScrollView {
+                                Text(description)
+                                    .font(.body)
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                                    .padding()
+                            }
+                            .frame(maxHeight: 300)
+
+                            Button("Close") {
+                                showingDescription = false
+                            }
+                            .font(.headline)
+                            .foregroundColor(.white)
+                            .padding(.horizontal, 24)
+                            .padding(.vertical, 12)
+                            .background(Color.blue)
+                            .cornerRadius(25)
+                        }
+                        .padding(30)
+                        .background(Color.black.opacity(0.9))
+                        .cornerRadius(20)
+                        .padding(.horizontal, 20)
                     }
                 }
-                .padding()
-                .foregroundStyle(.white)
-
-                Spacer()
-
-                if !description.isEmpty {
-                    Text(description)
-                        .foregroundStyle(.white)
-                        .padding(8)
-                        .background(Color.black.opacity(0.6))
-                        .cornerRadius(8)
-                        .padding()
-                }
-
-                HStack(spacing: 20) {
-                    Button {
-                        onRetake()
-                    } label: {
-                        VStack {
-                            Image(systemName: "camera")
-                            Text("New Photo")
-                                .font(.caption)
-                        }
-                        .frame(width: buttonSize, height: buttonSize)
-                        .background(Color.black)
-                        .cornerRadius(12)
-                    }
-
-                    Button {
-                        savePhoto()
-                    } label: {
-                        VStack {
-                            Image(systemName: "square.and.arrow.down")
-                            Text("Save")
-                                .font(.caption)
-                        }
-                        .frame(width: buttonSize, height: buttonSize)
-                        .background(Color.black)
-                        .cornerRadius(12)
-                    }
-
-                    Button {
-                        showShare = true
-                    } label: {
-                        VStack {
-                            Image(systemName: "square.and.arrow.up")
-                            Text("Share")
-                                .font(.caption)
-                        }
-                        .frame(width: buttonSize, height: buttonSize)
-                        .background(Color.black)
-                        .cornerRadius(12)
-                    }
-                    .sheet(isPresented: $showShare) {
-                        ShareSheet(activityItems: [image, generatedImage].compactMap { $0 })
-                    }
-                }
-                .padding(.bottom, 40)
-                .foregroundStyle(.white)
             }
         }
+        .ignoresSafeArea()
         .onChange(of: generatedImage) { newValue in
             if newValue != nil {
                 selection = .generated
             }
-        }
-        .alert("Prompt", isPresented: $showPrompt) {
-            Button("OK", role: .cancel) { }
-        } message: {
-            Text(prompt)
         }
     }
 
