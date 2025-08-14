@@ -12,10 +12,13 @@ struct PhotoPreviewView: View {
     let image: UIImage
     @Binding var generatedImage: UIImage?
     @Binding var description: String
+    @Binding var prompt: String
+    @Binding var style: PlaygroundStyle
     var onRetake: () -> Void
 
     @State private var showingDescription = false
     @State private var showShare = false
+    @State private var showSettings = false
     @State private var selection: ImageSelection = .original
     private let buttonSize: CGFloat = 80
 
@@ -72,8 +75,26 @@ struct PhotoPreviewView: View {
                             )
                         }
 
-                        Spacer()
+                        Button {
+                            showSettings = true
+                        } label: {
+                            VStack(spacing: 6) {
+                                Image(systemName: "gearshape.fill")
+                                    .font(.title)
+                                Text("Settings")
+                                    .font(.system(size: 12, weight: .medium))
+                            }
+                            .foregroundColor(.white)
+                            .frame(width: buttonSize, height: buttonSize)
+                            .background(Color.black.opacity(0.8))
+                            .cornerRadius(16)
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 16)
+                                    .stroke(Color.white.opacity(0.3), lineWidth: 1)
+                            )
+                        }
 
+        
                         Button {
                             showingDescription.toggle()
                         } label: {
@@ -209,6 +230,9 @@ struct PhotoPreviewView: View {
             if newValue != nil {
                 selection = .generated
             }
+        }
+        .sheet(isPresented: $showSettings) {
+            SettingsView(prompt: $prompt, style: $style)
         }
     }
 
