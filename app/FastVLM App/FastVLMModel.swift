@@ -31,11 +31,6 @@ class FastVLMModel {
     let generateParameters = GenerateParameters(temperature: 0.0)
     let maxTokens = 240
 
-    /// update the display every N tokens -- 4 looks like it updates continuously
-    /// and is low overhead.  observed ~15% reduction in tokens/s when updating
-    /// on every token
-    let displayEveryNTokens = 4
-
     private var loadState = LoadState.idle
     private var currentTask: Task<Void, Never>?
 
@@ -127,23 +122,13 @@ class FastVLMModel {
 
                         if !seenFirstToken {
                             seenFirstToken = true
-                            
-                            // produced first token, update the time to first token,
-                            // the processing state and start displaying the text
+
+                            // produced first token, update the time to first token
+                            // and the processing state without streaming text
                             let llmDuration = Date().timeIntervalSince(llmStart)
-                            let text = context.tokenizer.decode(tokens: tokens)
                             Task { @MainActor in
                                 evaluationState = .generatingResponse
-                                self.output = text
                                 self.promptTime = "\(Int(llmDuration * 1000)) ms"
-                            }
-                        }
-
-                        // Show the text in the view as it generates
-                        if tokens.count % displayEveryNTokens == 0 {
-                            let text = context.tokenizer.decode(tokens: tokens)
-                            Task { @MainActor in
-                                self.output = text
                             }
                         }
 
@@ -160,7 +145,9 @@ class FastVLMModel {
                 
                 // Check if task was cancelled before updating UI
                 if !Task.isCancelled {
-                    self.output = result.output
+                    if self.output != result.output {
+                        self.output = result.output
+                    }
                 }
 
             } catch {
