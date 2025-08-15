@@ -132,10 +132,12 @@ struct PhotoPreviewView: View {
                             Text("Generating image")
                                 .font(.headline)
                                 .foregroundColor(.white)
-                            Text(description)
-                                .font(.subheadline)
-                                .foregroundColor(.white)
-                                .multilineTextAlignment(.center)
+                            if !description.isEmpty {
+                                Text(description)
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                            }
                         }
                         .padding()
                         .background(Color.black.opacity(0.6))
