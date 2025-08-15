@@ -88,7 +88,12 @@ struct ContentView: View {
                         Spacer()
 
                         Button {
-                            if !isRealTime, let frame = latestFrame {
+                            if let frame = latestFrame {
+                                if isRealTime {
+                                    isRealTime = false
+                                    showDescription = false
+                                    model.cancel()
+                                }
                                 processSingleFrame(frame)
                                 capturedImage = makeUIImage(from: frame)
 #if os(iOS)
