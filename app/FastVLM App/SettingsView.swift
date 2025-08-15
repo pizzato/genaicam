@@ -7,15 +7,11 @@ import SwiftUI
 
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
-    @Binding var prompt: String
     @Binding var style: PlaygroundStyle
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Prompt") {
-                    TextField("Prompt", text: $prompt)
-                }
                 Section("Image Style") {
                     Picker("Style", selection: $style) {
                         ForEach(PlaygroundStyle.allCases) { option in
@@ -35,5 +31,5 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView(prompt: .constant("Describe the image"), style: .constant(.sketch))
+    SettingsView(style: .constant(.sketch))
 }
