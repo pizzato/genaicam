@@ -31,9 +31,8 @@ class PlaygroundImageGenerator {
     /// - Parameters:
     ///   - image: Source image.
     ///   - style: Desired generation style.
-    ///   - seed: Optional random seed used to diversify results.
     /// - Returns: Generated image or nil if generation fails.
-    func generate(from image: UIImage, style: PlaygroundStyle, seed: UInt32? = nil) async -> UIImage? {
+    func generate(from image: UIImage, style: PlaygroundStyle) async -> UIImage? {
         do {
             if creator == nil {
                 creator = try await ImageCreator()
@@ -54,21 +53,9 @@ class PlaygroundImageGenerator {
                 playgroundStyle = .animation
             }
 
-            if let seed {
-                let images = creator.images(
-                    for: concepts,
-                    style: playgroundStyle,
-                    seed: seed,
-                    limit: 1
-                )
-                for try await result in images {
-                    return UIImage(cgImage: result.cgImage)
-                }
-            } else {
-                let images = creator.images(for: concepts, style: playgroundStyle, limit: 1)
-                for try await result in images {
-                    return UIImage(cgImage: result.cgImage)
-                }
+            let images = creator.images(for: concepts, style: playgroundStyle, limit: 1)
+            for try await result in images {
+                return UIImage(cgImage: result.cgImage)
             }
         } catch {
             return nil
@@ -87,7 +74,7 @@ class PlaygroundImageGenerator {
     ///   - image: Source image.
     ///   - style: Desired generation style.
     /// - Returns: Always nil.
-    func generate(from image: UIImage, style: PlaygroundStyle, seed: UInt32? = nil) async -> UIImage? { nil }
+      func generate(from image: UIImage, style: PlaygroundStyle) async -> UIImage? { nil }
 }
 #endif
 #endif

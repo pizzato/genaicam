@@ -298,11 +298,9 @@ struct ContentView: View {
             let chosenStyle = style ?? playgroundStyle
             Task {
                 generatedImage = nil
-                let seed = UInt32.random(in: .min ... .max)
                 generatedImage = await imageGenerator.generate(
                     from: capturedImage,
-                    style: chosenStyle,
-                    seed: seed
+                    style: chosenStyle
                 )
             }
         }
