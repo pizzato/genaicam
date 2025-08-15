@@ -269,11 +269,11 @@ struct ContentView: View {
     func generateDescriptions(_ frame: CVImageBuffer) async {
         await MainActor.run { model.output = "" }
 
-        let imageInput = UserInput.ImageInput.ciImage(CIImage(cvPixelBuffer: frame))
+        let image = CIImage(cvPixelBuffer: frame)
 
         let shortInput = UserInput(
             prompt: .text("\(prompt) \(shortPromptSuffix)"),
-            images: [imageInput]
+            images: [.ciImage(image)]
         )
         let shortTask = await model.generate(shortInput)
         await shortTask.value
@@ -281,7 +281,7 @@ struct ContentView: View {
 
         let longInput = UserInput(
             prompt: .text("\(prompt) \(longPromptSuffix)"),
-            images: [imageInput]
+            images: [.ciImage(image)]
         )
         let longTask = await model.generate(longInput)
         await longTask.value
