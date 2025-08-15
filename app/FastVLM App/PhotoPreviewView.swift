@@ -12,7 +12,7 @@ struct PhotoPreviewView: View {
     let image: UIImage
     @Binding var generatedImage: UIImage?
     @Binding var description: String
-    @Binding var prompt: String
+    let prompt: String
     @Binding var style: PlaygroundStyle
     var onRetake: () -> Void
 
@@ -256,7 +256,7 @@ struct PhotoPreviewView: View {
             }
         )
         .sheet(isPresented: $showSettings) {
-            SettingsView(prompt: $prompt, style: $style)
+            SettingsView(style: $style)
         }
     }
 

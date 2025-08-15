@@ -30,7 +30,7 @@ struct ContentView: View {
     @State private var framesToDisplay: AsyncStream<CVImageBuffer>?
     @State private var latestFrame: CVImageBuffer?
 
-    @AppStorage("prompt") private var prompt = "Describe the image in English."
+    private let prompt = "Describe the image in English."
     @State private var promptSuffix = "Output should be brief, about 15 words or less."
 
     @State private var isRealTime: Bool = false
@@ -151,7 +151,7 @@ struct ContentView: View {
                     image: capturedImage,
                     generatedImage: $generatedImage,
                     description: $model.output,
-                    prompt: $prompt,
+                    prompt: prompt,
                     style: $playgroundStyle
                 ) {
                     showPreview = false
