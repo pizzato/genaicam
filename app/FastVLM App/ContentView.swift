@@ -61,6 +61,8 @@ struct ContentView: View {
     @available(iOS 18.0, *)
     @AppStorage("playgroundStyle") private var playgroundStyle: PlaygroundStyle = .sketch
 #endif
+    @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
+    @State private var showWelcome: Bool = false
 
     var body: some View {
         ZStack {
@@ -169,6 +171,11 @@ struct ContentView: View {
         .task {
             await distributeVideoFrames()
         }
+        .onAppear {
+            if !hasSeenWelcome {
+                showWelcome = true
+            }
+        }
         #if os(iOS)
         .onAppear {
             UIApplication.shared.isIdleTimerDisabled = true
@@ -191,11 +198,14 @@ struct ContentView: View {
                             },
                             onRecreate: { style in
                                 recreateImage(style: style)
-                            }
-                        )
+        }
+        )
             }
         }
 #endif
+        .sheet(isPresented: $showWelcome, onDismiss: { hasSeenWelcome = true }) {
+            WelcomeView()
+        }
         .sheet(isPresented: $showSettings) {
             SettingsView(
                 style: $playgroundStyle,
