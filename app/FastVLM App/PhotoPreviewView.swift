@@ -125,7 +125,7 @@ struct PhotoPreviewView: View {
                             Text("Generating image")
                                 .font(.headline)
                                 .foregroundColor(.white)
-                            Text(prompt)
+                            Text(description)
                                 .font(.subheadline)
                                 .foregroundColor(.white)
                                 .multilineTextAlignment(.center)
