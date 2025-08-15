@@ -169,18 +169,22 @@ struct ContentView: View {
                         image: capturedImage,
                         generatedImage: $generatedImage,
                         description: $model.output,
-                        style: $playgroundStyle,
                         shortDescription: shortDescription,
-                        longDescription: longDescription
-                    ) {
-                        showPreview = false
-                        model.output = ""
-                    }
+                        longDescription: longDescription,
+                        onRetake: {
+                            showPreview = false
+                            model.output = ""
+                        },
+                        onRecreate: {
+                            recreateImage()
+                        }
+                    )
             }
         }
         #endif
         .sheet(isPresented: $showSettings) {
-            DescriptionSettingsView(
+            SettingsView(
+                style: $playgroundStyle,
                 mode: $descriptionMode,
                 isRealTime: $isRealTime,
                 showDescription: $showDescription
@@ -286,6 +290,17 @@ struct ContentView: View {
             self.longDescription = longDesc
             self.model.output = descriptionMode == .short ? shortDesc : longDesc
         }
+    }
+
+    func recreateImage() {
+#if os(iOS) && canImport(ImagePlayground)
+        if #available(iOS 18.0, *), let capturedImage {
+            Task {
+                generatedImage = nil
+                generatedImage = await imageGenerator.generate(from: capturedImage, style: playgroundStyle)
+            }
+        }
+#endif
     }
 
     func makeUIImage(from buffer: CVImageBuffer) -> UIImage? {

@@ -12,13 +12,12 @@ struct PhotoPreviewView: View {
     let image: UIImage
     @Binding var generatedImage: UIImage?
     @Binding var description: String
-    @Binding var style: PlaygroundStyle
     let shortDescription: String
     let longDescription: String
     var onRetake: () -> Void
+    var onRecreate: () -> Void
 
     @State private var showShare = false
-    @State private var showSettings = false
     @State private var showMore = false
     @State private var selection: ImageSelection = .original
     private let buttonSize: CGFloat = 80
@@ -77,12 +76,12 @@ struct PhotoPreviewView: View {
                         }
 
                         Button {
-                            showSettings = true
+                            onRecreate()
                         } label: {
                             VStack(spacing: 6) {
-                                Image(systemName: "gearshape.fill")
+                                Image(systemName: "arrow.clockwise")
                                     .font(.title)
-                                Text("Settings")
+                                Text("Recreate")
                                     .font(.system(size: 12, weight: .medium))
                             }
                             .foregroundColor(.white)
@@ -219,9 +218,6 @@ struct PhotoPreviewView: View {
                 }
             }
         )
-        .sheet(isPresented: $showSettings) {
-            SettingsView(style: $style)
-        }
         .sheet(isPresented: $showMore) {
             MoreView(
                 shortDescription: shortDescription,
