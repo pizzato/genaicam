@@ -15,14 +15,11 @@ struct PhotoPreviewView: View {
     @Binding var style: PlaygroundStyle
     let shortDescription: String
     let longDescription: String
-    @Binding var isRealTime: Bool
-    @Binding var descriptionMode: DescriptionMode
-    @Binding var showDescription: Bool
     var onRetake: () -> Void
 
     @State private var showShare = false
     @State private var showSettings = false
-    @State private var showPromptSettings = false
+    @State private var showMore = false
     @State private var selection: ImageSelection = .original
     private let buttonSize: CGFloat = 80
 
@@ -100,12 +97,12 @@ struct PhotoPreviewView: View {
 
         
                         Button {
-                            showPromptSettings = true
+                            showMore = true
                         } label: {
                             VStack(spacing: 6) {
-                                Image(systemName: "plus")
+                                Image(systemName: "ellipsis.circle")
                                     .font(.title)
-                                Text("+")
+                                Text("More")
                                     .font(.system(size: 12, weight: .medium))
                             }
                             .foregroundColor(.white)
@@ -225,14 +222,10 @@ struct PhotoPreviewView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView(style: $style)
         }
-        .sheet(isPresented: $showPromptSettings) {
-            PromptSettingsView(
+        .sheet(isPresented: $showMore) {
+            MoreView(
                 shortDescription: shortDescription,
-                longDescription: longDescription,
-                mode: $descriptionMode,
-                isRealTime: $isRealTime,
-                liveDescription: $description,
-                showDescription: $showDescription
+                longDescription: longDescription
             )
         }
     }

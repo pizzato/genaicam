@@ -8,40 +8,14 @@ import SwiftUI
 import UIKit
 #endif
 
-struct PromptSettingsView: View {
+struct MoreView: View {
     @Environment(\.dismiss) private var dismiss
     let shortDescription: String
     let longDescription: String
-    @Binding var mode: DescriptionMode
-    @Binding var isRealTime: Bool
-    @Binding var liveDescription: String
-    @Binding var showDescription: Bool
 
     var body: some View {
         NavigationStack {
             Form {
-                Section("Live Description") {
-                    Toggle("Enabled", isOn: Binding(
-                        get: { isRealTime },
-                        set: {
-                            isRealTime = $0
-                            showDescription = $0
-                        }
-                    ))
-                    Picker("Type", selection: $mode) {
-                        Text("Short").tag(DescriptionMode.short)
-                        Text("Long").tag(DescriptionMode.long)
-                    }
-                    .pickerStyle(.segmented)
-                    Text(liveDescription)
-                        .textSelection(.enabled)
-                    HStack {
-                        Button("Copy") { copy(liveDescription) }
-                        ShareLink(item: liveDescription) {
-                            Label("Share", systemImage: "square.and.arrow.up")
-                        }
-                    }
-                }
                 if !shortDescription.isEmpty {
                     Section("Short Description") {
                         Text(shortDescription)
@@ -67,7 +41,7 @@ struct PromptSettingsView: View {
                     }
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle("More")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
@@ -84,12 +58,5 @@ struct PromptSettingsView: View {
 }
 
 #Preview {
-    PromptSettingsView(
-        shortDescription: "",
-        longDescription: "",
-        mode: .constant(.short),
-        isRealTime: .constant(false),
-        liveDescription: .constant(""),
-        showDescription: .constant(false)
-    )
+    MoreView(shortDescription: "", longDescription: "")
 }

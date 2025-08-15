@@ -143,7 +143,7 @@ struct ContentView: View {
                                 .fill(Color.black.opacity(0.6))
                                 .frame(width: 50, height: 50)
                                 .overlay(
-                                    Image(systemName: "plus")
+                                    Image(systemName: "gearshape")
                                         .foregroundStyle(.white)
                                 )
                         }
@@ -165,28 +165,27 @@ struct ContentView: View {
         }
         .fullScreenCover(isPresented: $showPreview) {
             if let capturedImage {
-                PhotoPreviewView(
-                    image: capturedImage,
-                    generatedImage: $generatedImage,
-                    description: $model.output,
-                    style: $playgroundStyle,
-                    shortDescription: shortDescription,
-                    longDescription: longDescription,
-                    isRealTime: $isRealTime,
-                    descriptionMode: $descriptionMode,
-                    showDescription: $showDescription
-                ) {
-                    showPreview = false
-                    model.output = ""
-                }
+                    PhotoPreviewView(
+                        image: capturedImage,
+                        generatedImage: $generatedImage,
+                        description: $model.output,
+                        style: $playgroundStyle,
+                        shortDescription: shortDescription,
+                        longDescription: longDescription
+                    ) {
+                        showPreview = false
+                        model.output = ""
+                    }
             }
         }
         #endif
-#if os(iOS) && canImport(ImagePlayground)
         .sheet(isPresented: $showSettings) {
-            SettingsView(style: $playgroundStyle)
+            DescriptionSettingsView(
+                mode: $descriptionMode,
+                isRealTime: $isRealTime,
+                showDescription: $showDescription
+            )
         }
-#endif
         .onChange(of: isRealTime) { _, newValue in
             showDescription = newValue
             model.cancel()
