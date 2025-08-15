@@ -22,6 +22,15 @@ extension CMSampleBuffer: @unchecked @retroactive Sendable {}
 // delay between frames -- controls the frame rate of the updates
 let FRAME_DELAY = Duration.milliseconds(1)
 
+enum DescriptionMode: String, CaseIterable, Identifiable {
+    case short
+    case long
+    var id: String { rawValue }
+}
+
+let shortPromptSuffix = "Output is very brief for a less capable image generation task, use 1 to 10 words at most."
+let longPromptSuffix = "Output to be used in image generation prompts."
+
 struct ContentView: View {
     @State private var camera = CameraController()
     @State private var model = FastVLMModel()
@@ -31,7 +40,13 @@ struct ContentView: View {
     @State private var latestFrame: CVImageBuffer?
 
     private let prompt = "Describe the image in English."
-    @State private var promptSuffix = "Output should be brief, about 15 words or less."
+    @State private var descriptionMode: DescriptionMode = .short
+    var promptSuffix: String {
+        descriptionMode == .short ? shortPromptSuffix : longPromptSuffix
+    }
+    @State private var shortDescription: String = ""
+    @State private var longDescription: String = ""
+    @State private var showPromptSettings: Bool = false
 
     @State private var isRealTime: Bool = false
     @State private var showDescription: Bool = false
@@ -122,16 +137,14 @@ struct ContentView: View {
                         Spacer()
 
                         Button {
-                            isRealTime.toggle()
-                            showDescription = isRealTime
-                            model.cancel()
+                            showPromptSettings = true
                         } label: {
                             Circle()
                                 .fill(Color.black.opacity(0.6))
                                 .frame(width: 50, height: 50)
                                 .overlay(
-                                    Image(systemName: "text.bubble")
-                                        .foregroundStyle(isRealTime ? .green : .white)
+                                    Image(systemName: "plus")
+                                        .foregroundStyle(.white)
                                 )
                         }
                     }
@@ -156,8 +169,12 @@ struct ContentView: View {
                     image: capturedImage,
                     generatedImage: $generatedImage,
                     description: $model.output,
-                    prompt: prompt,
-                    style: $playgroundStyle
+                    style: $playgroundStyle,
+                    shortDescription: shortDescription,
+                    longDescription: longDescription,
+                    isRealTime: $isRealTime,
+                    descriptionMode: $descriptionMode,
+                    showDescription: $showDescription
                 ) {
                     showPreview = false
                     model.output = ""
@@ -165,6 +182,20 @@ struct ContentView: View {
             }
         }
         #endif
+        .sheet(isPresented: $showPromptSettings) {
+            PromptSettingsView(
+                shortDescription: shortDescription,
+                longDescription: longDescription,
+                mode: $descriptionMode,
+                isRealTime: $isRealTime,
+                liveDescription: $model.output,
+                showDescription: $showDescription
+            )
+        }
+        .onChange(of: isRealTime) { newValue in
+            showDescription = newValue
+            model.cancel()
+        }
     }
 
     func analyzeVideoFrames(_ frames: AsyncStream<CVImageBuffer>) async {
@@ -227,23 +258,39 @@ struct ContentView: View {
         await analyze
     }
 
-    /// Perform FastVLM inference on a single frame.
+    /// Generate both short and long descriptions for a single frame.
     /// - Parameter frame: The frame to analyze.
     func processSingleFrame(_ frame: CVImageBuffer) {
-        // Reset Response UI (show spinner)
-        Task { @MainActor in
-            model.output = ""
-        }
-
-        // Construct request to model
-        let userInput = UserInput(
-            prompt: .text("\(prompt) \(promptSuffix)"),
-            images: [.ciImage(CIImage(cvPixelBuffer: frame))]
-        )
-
-        // Post request to FastVLM
         Task {
-            await model.generate(userInput)
+            await generateDescriptions(frame)
+        }
+    }
+
+    func generateDescriptions(_ frame: CVImageBuffer) async {
+        await MainActor.run { model.output = "" }
+
+        let imageInput = UserInput.ImageInput.ciImage(CIImage(cvPixelBuffer: frame))
+
+        let shortInput = UserInput(
+            prompt: .text("\(prompt) \(shortPromptSuffix)"),
+            images: [imageInput]
+        )
+        let shortTask = await model.generate(shortInput)
+        await shortTask.value
+        let shortDesc = model.output
+
+        let longInput = UserInput(
+            prompt: .text("\(prompt) \(longPromptSuffix)"),
+            images: [imageInput]
+        )
+        let longTask = await model.generate(longInput)
+        await longTask.value
+        let longDesc = model.output
+
+        await MainActor.run {
+            self.shortDescription = shortDesc
+            self.longDescription = longDesc
+            self.model.output = descriptionMode == .short ? shortDesc : longDesc
         }
     }
 
