@@ -79,7 +79,7 @@ struct ContentView: View {
                 Spacer()
 
                 VStack(spacing: 16) {
-                    if showDescription {
+                    if showDescription && !model.output.isEmpty {
                         Text(model.output)
                             .foregroundStyle(.white)
                             .padding(8)
@@ -109,7 +109,8 @@ struct ContentView: View {
                                     showDescription = false
                                     model.cancel()
                                 }
-                                processSingleFrame(frame)
+                                shortDescription = ""
+                                let shortTask = Task { await generateShortDescription(frame) }
                                 capturedImage = makeUIImage(from: frame)
 #if os(iOS)
                                 generatedImage = nil
@@ -118,7 +119,19 @@ struct ContentView: View {
                                 if #available(iOS 18.0, *), let capturedImage {
                                     Task {
                                         generatedImage = await imageGenerator.generate(from: capturedImage, style: playgroundStyle)
+                                        _ = await shortTask.value
+                                        await generateLongDescription(frame)
                                     }
+                                } else {
+                                    Task {
+                                        _ = await shortTask.value
+                                        await generateLongDescription(frame)
+                                    }
+                                }
+#else
+                                Task {
+                                    _ = await shortTask.value
+                                    await generateLongDescription(frame)
                                 }
 #endif
                                 showPreview = true
@@ -168,12 +181,13 @@ struct ContentView: View {
                         PhotoPreviewView(
                             image: capturedImage,
                             generatedImage: $generatedImage,
-                            description: $model.output,
+                            description: $shortDescription,
                             shortDescription: shortDescription,
                             longDescription: longDescription,
                             onRetake: {
                                 showPreview = false
                                 model.output = ""
+                                model.cancel()
                             },
                             onRecreate: { style in
                                 recreateImage(style: style)
@@ -181,7 +195,7 @@ struct ContentView: View {
                         )
             }
         }
-        #endif
+#endif
         .sheet(isPresented: $showSettings) {
             SettingsView(
                 style: $playgroundStyle,
@@ -256,16 +270,12 @@ struct ContentView: View {
         await analyze
     }
 
-    /// Generate both short and long descriptions for a single frame.
-    /// - Parameter frame: The frame to analyze.
-    func processSingleFrame(_ frame: CVImageBuffer) {
-        Task {
-            await generateDescriptions(frame)
+    func generateShortDescription(_ frame: CVImageBuffer) async {
+        await MainActor.run {
+            model.output = ""
+            shortDescription = ""
+            longDescription = ""
         }
-    }
-
-    func generateDescriptions(_ frame: CVImageBuffer) async {
-        await MainActor.run { model.output = "" }
 
         let image = CIImage(cvPixelBuffer: frame)
 
@@ -277,6 +287,15 @@ struct ContentView: View {
         _ = await shortTask.result
         let shortDesc = model.output
 
+        await MainActor.run {
+            self.shortDescription = shortDesc
+            self.model.output = shortDesc
+        }
+    }
+
+    func generateLongDescription(_ frame: CVImageBuffer) async {
+        let image = CIImage(cvPixelBuffer: frame)
+
         let longInput = UserInput(
             prompt: .text("\(prompt) \(longPromptSuffix)"),
             images: [.ciImage(image)]
@@ -286,9 +305,8 @@ struct ContentView: View {
         let longDesc = model.output
 
         await MainActor.run {
-            self.shortDescription = shortDesc
             self.longDescription = longDesc
-            self.model.output = descriptionMode == .short ? shortDesc : longDesc
+            self.model.output = self.shortDescription
         }
     }
 
