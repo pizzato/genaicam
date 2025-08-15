@@ -165,20 +165,20 @@ struct ContentView: View {
         }
         .fullScreenCover(isPresented: $showPreview) {
             if let capturedImage {
-                    PhotoPreviewView(
-                        image: capturedImage,
-                        generatedImage: $generatedImage,
-                        description: $model.output,
-                        shortDescription: shortDescription,
-                        longDescription: longDescription,
-                        onRetake: {
-                            showPreview = false
-                            model.output = ""
-                        },
-                        onRecreate: {
-                            recreateImage()
-                        }
-                    )
+                        PhotoPreviewView(
+                            image: capturedImage,
+                            generatedImage: $generatedImage,
+                            description: $model.output,
+                            shortDescription: shortDescription,
+                            longDescription: longDescription,
+                            onRetake: {
+                                showPreview = false
+                                model.output = ""
+                            },
+                            onRecreate: { style in
+                                recreateImage(style: style)
+                            }
+                        )
             }
         }
         #endif
@@ -292,12 +292,18 @@ struct ContentView: View {
         }
     }
 
-    func recreateImage() {
+    func recreateImage(style: PlaygroundStyle? = nil) {
 #if os(iOS) && canImport(ImagePlayground)
         if #available(iOS 18.0, *), let capturedImage {
+            let chosenStyle = style ?? playgroundStyle
             Task {
                 generatedImage = nil
-                generatedImage = await imageGenerator.generate(from: capturedImage, style: playgroundStyle)
+                let seed = UInt32.random(in: .min ... .max)
+                generatedImage = await imageGenerator.generate(
+                    from: capturedImage,
+                    style: chosenStyle,
+                    seed: seed
+                )
             }
         }
 #endif
