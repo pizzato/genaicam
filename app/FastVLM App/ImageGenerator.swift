@@ -58,7 +58,7 @@ class PlaygroundImageGenerator {
                 let images = creator.images(
                     for: concepts,
                     style: playgroundStyle,
-                    seeds: [seed],
+                    seed: seed,
                     limit: 1
                 )
                 for try await result in images {
