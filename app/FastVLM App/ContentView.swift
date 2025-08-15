@@ -192,7 +192,7 @@ struct ContentView: View {
                 showDescription: $showDescription
             )
         }
-        .onChange(of: isRealTime) { newValue in
+        .onChange(of: isRealTime) { _, newValue in
             showDescription = newValue
             model.cancel()
         }
@@ -276,7 +276,7 @@ struct ContentView: View {
             images: [.ciImage(image)]
         )
         let shortTask = await model.generate(shortInput)
-        await shortTask.value
+        _ = await shortTask.result
         let shortDesc = model.output
 
         let longInput = UserInput(
@@ -284,7 +284,7 @@ struct ContentView: View {
             images: [.ciImage(image)]
         )
         let longTask = await model.generate(longInput)
-        await longTask.value
+        _ = await longTask.result
         let longDesc = model.output
 
         await MainActor.run {
