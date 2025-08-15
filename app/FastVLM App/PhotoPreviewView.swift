@@ -15,7 +15,7 @@ struct PhotoPreviewView: View {
     let shortDescription: String
     let longDescription: String
     var onRetake: () -> Void
-    var onRecreate: () -> Void
+    var onRecreate: (PlaygroundStyle?) -> Void
 
     @State private var showShare = false
     @State private var showMore = false
@@ -76,7 +76,7 @@ struct PhotoPreviewView: View {
                         }
 
                         Button {
-                            onRecreate()
+                            onRecreate(nil)
                         } label: {
                             VStack(spacing: 6) {
                                 Image(systemName: "arrow.clockwise")
@@ -92,6 +92,13 @@ struct PhotoPreviewView: View {
                                 RoundedRectangle(cornerRadius: 16)
                                     .stroke(Color.white.opacity(0.3), lineWidth: 1)
                             )
+                        }
+                        .contextMenu {
+                            ForEach(PlaygroundStyle.allCases) { option in
+                                Button(option.rawValue.capitalized) {
+                                    onRecreate(option)
+                                }
+                            }
                         }
 
         

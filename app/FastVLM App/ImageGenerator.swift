@@ -74,7 +74,7 @@ class PlaygroundImageGenerator {
     ///   - image: Source image.
     ///   - style: Desired generation style.
     /// - Returns: Always nil.
-    func generate(from image: UIImage, style: PlaygroundStyle) async -> UIImage? { nil }
+      func generate(from image: UIImage, style: PlaygroundStyle) async -> UIImage? { nil }
 }
 #endif
 #endif
