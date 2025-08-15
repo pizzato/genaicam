@@ -11,6 +11,7 @@ struct SettingsView: View {
     @Binding var mode: DescriptionMode
     @Binding var isRealTime: Bool
     @Binding var showDescription: Bool
+    @State private var showWelcome = false
 
     var body: some View {
         NavigationStack {
@@ -37,12 +38,19 @@ struct SettingsView: View {
                         }
                     }
                 }
+
+                Section("About") {
+                    Button("Welcome Screen") { showWelcome = true }
+                }
             }
             .navigationTitle("Settings")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
+            }
+            .sheet(isPresented: $showWelcome) {
+                WelcomeView()
             }
         }
     }

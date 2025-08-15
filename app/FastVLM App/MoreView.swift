@@ -12,6 +12,7 @@ struct MoreView: View {
     @Environment(\.dismiss) private var dismiss
     let shortDescription: String
     let longDescription: String
+    @State private var showWelcome = false
 
     var body: some View {
         NavigationStack {
@@ -40,12 +41,18 @@ struct MoreView: View {
                         }
                     }
                 }
+                Section("About") {
+                    Button("Welcome Screen") { showWelcome = true }
+                }
             }
             .navigationTitle("More")
             .toolbar {
                 ToolbarItem(placement: .confirmationAction) {
                     Button("Done") { dismiss() }
                 }
+            }
+            .sheet(isPresented: $showWelcome) {
+                WelcomeView()
             }
         }
     }
