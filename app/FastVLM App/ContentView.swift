@@ -46,7 +46,7 @@ struct ContentView: View {
     }
     @State private var shortDescription: String = ""
     @State private var longDescription: String = ""
-    @State private var showPromptSettings: Bool = false
+    @State private var showSettings: Bool = false
 
     @State private var isRealTime: Bool = false
     @State private var showDescription: Bool = false
@@ -137,7 +137,7 @@ struct ContentView: View {
                         Spacer()
 
                         Button {
-                            showPromptSettings = true
+                            showSettings = true
                         } label: {
                             Circle()
                                 .fill(Color.black.opacity(0.6))
@@ -182,16 +182,11 @@ struct ContentView: View {
             }
         }
         #endif
-        .sheet(isPresented: $showPromptSettings) {
-            PromptSettingsView(
-                shortDescription: shortDescription,
-                longDescription: longDescription,
-                mode: $descriptionMode,
-                isRealTime: $isRealTime,
-                liveDescription: $model.output,
-                showDescription: $showDescription
-            )
+#if os(iOS) && canImport(ImagePlayground)
+        .sheet(isPresented: $showSettings) {
+            SettingsView(style: $playgroundStyle)
         }
+#endif
         .onChange(of: isRealTime) { _, newValue in
             showDescription = newValue
             model.cancel()
