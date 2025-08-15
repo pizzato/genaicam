@@ -56,7 +56,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
-		019A3E0A2D78E6A00055F93B /* FastVLM App.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "FastVLM App.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		019A3E0A2D78E6A00055F93B /* GenAICam.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = GenAICam.app; sourceTree = BUILT_PRODUCTS_DIR; };
 		12FFAF3D2DC93583009C4EFA /* get_pretrained_mlx_model.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = get_pretrained_mlx_model.sh; sourceTree = "<group>"; };
 		12FFAF3E2DC93583009C4EFA /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
 		C35372AE2D08C32D00474D34 /* Video.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Video.framework; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -64,12 +64,12 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		120A44852D9B05A900E244A3 /* Exceptions for "FastVLM App" folder in "FastVLM App" target */ = {
+		120A44852D9B05A900E244A3 /* Exceptions for "FastVLM App" folder in "GenAICam" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 019A3E092D78E6A00055F93B /* FastVLM App */;
+			target = 019A3E092D78E6A00055F93B /* GenAICam */;
 		};
 		C35372B92D08C32D00474D34 /* Exceptions for "Video" folder in "Video" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
@@ -91,7 +91,7 @@
 		019A3E0B2D78E6A00055F93B /* FastVLM App */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				120A44852D9B05A900E244A3 /* Exceptions for "FastVLM App" folder in "FastVLM App" target */,
+				120A44852D9B05A900E244A3 /* Exceptions for "FastVLM App" folder in "GenAICam" target */,
 			);
 			path = "FastVLM App";
 			sourceTree = "<group>";
@@ -174,7 +174,7 @@
 			isa = PBXGroup;
 			children = (
 				C35372AE2D08C32D00474D34 /* Video.framework */,
-				019A3E0A2D78E6A00055F93B /* FastVLM App.app */,
+				019A3E0A2D78E6A00055F93B /* GenAICam.app */,
 				C39BB3E62D79082A005DB8FB /* FastVLM.framework */,
 			);
 			name = Products;
@@ -207,9 +207,9 @@
 /* End PBXHeadersBuildPhase section */
 
 /* Begin PBXNativeTarget section */
-		019A3E092D78E6A00055F93B /* FastVLM App */ = {
+		019A3E092D78E6A00055F93B /* GenAICam */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 019A3E182D78E6A20055F93B /* Build configuration list for PBXNativeTarget "FastVLM App" */;
+			buildConfigurationList = 019A3E182D78E6A20055F93B /* Build configuration list for PBXNativeTarget "GenAICam" */;
 			buildPhases = (
 				019A3E062D78E6A00055F93B /* Sources */,
 				019A3E072D78E6A00055F93B /* Frameworks */,
@@ -225,7 +225,7 @@
 			fileSystemSynchronizedGroups = (
 				019A3E0B2D78E6A00055F93B /* FastVLM App */,
 			);
-			name = "FastVLM App";
+			name = GenAICam;
 			packageProductDependencies = (
 				019A3E192D78E7370055F93B /* MLX */,
 				019A3E1B2D78E73E0055F93B /* MLXLMCommon */,
@@ -233,7 +233,7 @@
 				019A3E1F2D78E74C0055F93B /* MLXVLM */,
 			);
 			productName = FastVLMCameraExample;
-			productReference = 019A3E0A2D78E6A00055F93B /* FastVLM App.app */;
+			productReference = 019A3E0A2D78E6A00055F93B /* GenAICam.app */;
 			productType = "com.apple.product-type.application";
 		};
 		C35372AD2D08C32D00474D34 /* Video */ = {
@@ -330,7 +330,7 @@
 			projectRoot = "";
 			targets = (
 				C35372AD2D08C32D00474D34 /* Video */,
-				019A3E092D78E6A00055F93B /* FastVLM App */,
+				019A3E092D78E6A00055F93B /* GenAICam */,
 				C39BB3E52D79082A005DB8FB /* FastVLM */,
 			);
 		};
@@ -464,6 +464,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FastVLM App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = GenAICam;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use camera to get live feed of images";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Allow GenAICam to save photos to your library.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -559,6 +560,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = "FastVLM App/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = GenAICam;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use camera to get live feed of images";
 				INFOPLIST_KEY_NSPhotoLibraryAddUsageDescription = "Allow GenAICam to save photos to your library.";
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
@@ -1053,7 +1055,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		019A3E182D78E6A20055F93B /* Build configuration list for PBXNativeTarget "FastVLM App" */ = {
+		019A3E182D78E6A20055F93B /* Build configuration list for PBXNativeTarget "GenAICam" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				019A3E162D78E6A20055F93B /* Debug */,

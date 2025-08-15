@@ -16,8 +16,8 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "019A3E092D78E6A00055F93B"
-               BuildableName = "FastVLM App.app"
-               BlueprintName = "FastVLM App"
+               BuildableName = "GenAICam.app"
+               BlueprintName = "GenAICam"
                ReferencedContainer = "container:FastVLM.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
@@ -45,8 +45,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "019A3E092D78E6A00055F93B"
-            BuildableName = "FastVLM App.app"
-            BlueprintName = "FastVLM App"
+            BuildableName = "GenAICam.app"
+            BlueprintName = "GenAICam"
             ReferencedContainer = "container:FastVLM.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
@@ -62,8 +62,8 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "019A3E092D78E6A00055F93B"
-            BuildableName = "FastVLM App.app"
-            BlueprintName = "FastVLM App"
+            BuildableName = "GenAICam.app"
+            BlueprintName = "GenAICam"
             ReferencedContainer = "container:FastVLM.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
