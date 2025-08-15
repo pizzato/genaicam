@@ -12,13 +12,13 @@ struct PhotoPreviewView: View {
     let image: UIImage
     @Binding var generatedImage: UIImage?
     @Binding var description: String
-    let prompt: String
-    @Binding var style: PlaygroundStyle
+    let shortDescription: String
+    let longDescription: String
     var onRetake: () -> Void
+    var onRecreate: () -> Void
 
-    @State private var showingDescription = false
     @State private var showShare = false
-    @State private var showSettings = false
+    @State private var showMore = false
     @State private var selection: ImageSelection = .original
     private let buttonSize: CGFloat = 80
 
@@ -76,12 +76,12 @@ struct PhotoPreviewView: View {
                         }
 
                         Button {
-                            showSettings = true
+                            onRecreate()
                         } label: {
                             VStack(spacing: 6) {
-                                Image(systemName: "gearshape.fill")
+                                Image(systemName: "arrow.clockwise")
                                     .font(.title)
-                                Text("Settings")
+                                Text("Recreate")
                                     .font(.system(size: 12, weight: .medium))
                             }
                             .foregroundColor(.white)
@@ -96,12 +96,12 @@ struct PhotoPreviewView: View {
 
         
                         Button {
-                            showingDescription.toggle()
+                            showMore = true
                         } label: {
                             VStack(spacing: 6) {
-                                Image(systemName: "text.bubble.fill")
+                                Image(systemName: "ellipsis.circle")
                                     .font(.title)
-                                Text("Info")
+                                Text("More")
                                     .font(.system(size: 12, weight: .medium))
                             }
                             .foregroundColor(.white)
@@ -205,45 +205,6 @@ struct PhotoPreviewView: View {
                     .padding(.bottom, 50)
                 }
 
-                if showingDescription {
-                    ZStack {
-                        Color.black.opacity(0.7)
-                            .ignoresSafeArea()
-                            .onTapGesture {
-                                showingDescription = false
-                            }
-
-                        VStack(spacing: 20) {
-                            Text("Description")
-                                .font(.title2)
-                                .fontWeight(.bold)
-                                .foregroundColor(.white)
-
-                            ScrollView {
-                                Text(description)
-                                    .font(.body)
-                                    .foregroundColor(.white)
-                                    .multilineTextAlignment(.center)
-                                    .padding()
-                            }
-                            .frame(maxHeight: 300)
-
-                            Button("Close") {
-                                showingDescription = false
-                            }
-                            .font(.headline)
-                            .foregroundColor(.white)
-                            .padding(.horizontal, 24)
-                            .padding(.vertical, 12)
-                            .background(Color.blue)
-                            .cornerRadius(25)
-                        }
-                        .padding(30)
-                        .background(Color.black.opacity(0.9))
-                        .cornerRadius(20)
-                        .padding(.horizontal, 20)
-                    }
-                }
             }
         }
         .ignoresSafeArea()
@@ -257,8 +218,11 @@ struct PhotoPreviewView: View {
                 }
             }
         )
-        .sheet(isPresented: $showSettings) {
-            SettingsView(style: $style)
+        .sheet(isPresented: $showMore) {
+            MoreView(
+                shortDescription: shortDescription,
+                longDescription: longDescription
+            )
         }
     }
 

@@ -22,6 +22,15 @@ extension CMSampleBuffer: @unchecked @retroactive Sendable {}
 // delay between frames -- controls the frame rate of the updates
 let FRAME_DELAY = Duration.milliseconds(1)
 
+enum DescriptionMode: String, CaseIterable, Identifiable {
+    case short
+    case long
+    var id: String { rawValue }
+}
+
+let shortPromptSuffix = "Output is very brief for a less capable image generation task, use 1 to 10 words at most."
+let longPromptSuffix = "Output to be used in image generation prompts."
+
 struct ContentView: View {
     @State private var camera = CameraController()
     @State private var model = FastVLMModel()
@@ -31,7 +40,13 @@ struct ContentView: View {
     @State private var latestFrame: CVImageBuffer?
 
     private let prompt = "Describe the image in English."
-    @State private var promptSuffix = "Output should be brief, about 15 words or less."
+    @State private var descriptionMode: DescriptionMode = .short
+    var promptSuffix: String {
+        descriptionMode == .short ? shortPromptSuffix : longPromptSuffix
+    }
+    @State private var shortDescription: String = ""
+    @State private var longDescription: String = ""
+    @State private var showSettings: Bool = false
 
     @State private var isRealTime: Bool = false
     @State private var showDescription: Bool = false
@@ -122,16 +137,14 @@ struct ContentView: View {
                         Spacer()
 
                         Button {
-                            isRealTime.toggle()
-                            showDescription = isRealTime
-                            model.cancel()
+                            showSettings = true
                         } label: {
                             Circle()
                                 .fill(Color.black.opacity(0.6))
                                 .frame(width: 50, height: 50)
                                 .overlay(
-                                    Image(systemName: "text.bubble")
-                                        .foregroundStyle(isRealTime ? .green : .white)
+                                    Image(systemName: "gearshape")
+                                        .foregroundStyle(.white)
                                 )
                         }
                     }
@@ -152,19 +165,35 @@ struct ContentView: View {
         }
         .fullScreenCover(isPresented: $showPreview) {
             if let capturedImage {
-                PhotoPreviewView(
-                    image: capturedImage,
-                    generatedImage: $generatedImage,
-                    description: $model.output,
-                    prompt: prompt,
-                    style: $playgroundStyle
-                ) {
-                    showPreview = false
-                    model.output = ""
-                }
+                    PhotoPreviewView(
+                        image: capturedImage,
+                        generatedImage: $generatedImage,
+                        description: $model.output,
+                        shortDescription: shortDescription,
+                        longDescription: longDescription,
+                        onRetake: {
+                            showPreview = false
+                            model.output = ""
+                        },
+                        onRecreate: {
+                            recreateImage()
+                        }
+                    )
             }
         }
         #endif
+        .sheet(isPresented: $showSettings) {
+            SettingsView(
+                style: $playgroundStyle,
+                mode: $descriptionMode,
+                isRealTime: $isRealTime,
+                showDescription: $showDescription
+            )
+        }
+        .onChange(of: isRealTime) { _, newValue in
+            showDescription = newValue
+            model.cancel()
+        }
     }
 
     func analyzeVideoFrames(_ frames: AsyncStream<CVImageBuffer>) async {
@@ -227,24 +256,51 @@ struct ContentView: View {
         await analyze
     }
 
-    /// Perform FastVLM inference on a single frame.
+    /// Generate both short and long descriptions for a single frame.
     /// - Parameter frame: The frame to analyze.
     func processSingleFrame(_ frame: CVImageBuffer) {
-        // Reset Response UI (show spinner)
-        Task { @MainActor in
-            model.output = ""
-        }
-
-        // Construct request to model
-        let userInput = UserInput(
-            prompt: .text("\(prompt) \(promptSuffix)"),
-            images: [.ciImage(CIImage(cvPixelBuffer: frame))]
-        )
-
-        // Post request to FastVLM
         Task {
-            await model.generate(userInput)
+            await generateDescriptions(frame)
         }
+    }
+
+    func generateDescriptions(_ frame: CVImageBuffer) async {
+        await MainActor.run { model.output = "" }
+
+        let image = CIImage(cvPixelBuffer: frame)
+
+        let shortInput = UserInput(
+            prompt: .text("\(prompt) \(shortPromptSuffix)"),
+            images: [.ciImage(image)]
+        )
+        let shortTask = await model.generate(shortInput)
+        _ = await shortTask.result
+        let shortDesc = model.output
+
+        let longInput = UserInput(
+            prompt: .text("\(prompt) \(longPromptSuffix)"),
+            images: [.ciImage(image)]
+        )
+        let longTask = await model.generate(longInput)
+        _ = await longTask.result
+        let longDesc = model.output
+
+        await MainActor.run {
+            self.shortDescription = shortDesc
+            self.longDescription = longDesc
+            self.model.output = descriptionMode == .short ? shortDesc : longDesc
+        }
+    }
+
+    func recreateImage() {
+#if os(iOS) && canImport(ImagePlayground)
+        if #available(iOS 18.0, *), let capturedImage {
+            Task {
+                generatedImage = nil
+                generatedImage = await imageGenerator.generate(from: capturedImage, style: playgroundStyle)
+            }
+        }
+#endif
     }
 
     func makeUIImage(from buffer: CVImageBuffer) -> UIImage? {
