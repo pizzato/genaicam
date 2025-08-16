@@ -14,10 +14,11 @@
                                 <color key="textColor" systemColor="labelColor"/>
                             </label>
                         </subviews>
+                        <viewLayoutGuide key="safeArea" id="safeArea"/>
                         <color key="backgroundColor" systemColor="systemBackgroundColor"/>
                         <constraints>
-                            <constraint firstItem="titleLabel" firstAttribute="centerX" secondItem="launchView" secondAttribute="centerX" id="centerX"/>
-                            <constraint firstItem="titleLabel" firstAttribute="centerY" secondItem="launchView" secondAttribute="centerY" id="centerY"/>
+                            <constraint firstItem="titleLabel" firstAttribute="centerX" secondItem="safeArea" secondAttribute="centerX" id="centerX"/>
+                            <constraint firstItem="titleLabel" firstAttribute="centerY" secondItem="safeArea" secondAttribute="centerY" id="centerY"/>
                         </constraints>
                     </view>
                 </viewController>
