@@ -83,7 +83,7 @@ class FastVLMModel {
         }
     }
 
-    public func generate(_ userInput: UserInput) async -> Task<Void, Never> {
+    public func generate(_ userInput: UserInput, stream: Bool = true) async -> Task<Void, Never> {
         if let currentTask, running {
             return currentTask
         }
@@ -134,13 +134,15 @@ class FastVLMModel {
                             let text = context.tokenizer.decode(tokens: tokens)
                             Task { @MainActor in
                                 evaluationState = .generatingResponse
-                                self.output = text
                                 self.promptTime = "\(Int(llmDuration * 1000)) ms"
+                                if stream {
+                                    self.output = text
+                                }
                             }
                         }
 
                         // Show the text in the view as it generates
-                        if tokens.count % displayEveryNTokens == 0 {
+                        if stream && tokens.count % displayEveryNTokens == 0 {
                             let text = context.tokenizer.decode(tokens: tokens)
                             Task { @MainActor in
                                 self.output = text

@@ -261,7 +261,7 @@ struct ContentView: View {
                 images: [.ciImage(CIImage(cvPixelBuffer: frame))]
             )
 
-            let t = await model.generate(userInput)
+            let t = await model.generate(userInput, stream: false)
             _ = await t.result
 
             do {
