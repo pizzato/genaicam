@@ -8,6 +8,7 @@ import MLXLMCommon
 import SwiftUI
 import Video
 import CoreImage
+import Foundation
 #if os(iOS)
 import UIKit
 #endif
@@ -63,6 +64,8 @@ struct ContentView: View {
 #endif
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
     @State private var showWelcome: Bool = false
+    @State private var previousOutput: String = ""
+    @State private var diffedOutput: AttributedString = ""
 
     var body: some View {
         ZStack {
@@ -82,11 +85,18 @@ struct ContentView: View {
 
                 VStack(spacing: 16) {
                     if showDescription && !model.output.isEmpty {
-                        Text(model.output)
-                            .foregroundStyle(.white)
-                            .padding(8)
-                            .background(Color.black.opacity(0.6))
-                            .cornerRadius(8)
+                        if isRealTime {
+                            Text(diffedOutput)
+                                .padding(8)
+                                .background(Color.black.opacity(0.6))
+                                .cornerRadius(8)
+                        } else {
+                            Text(model.output)
+                                .foregroundStyle(.white)
+                                .padding(8)
+                                .background(Color.black.opacity(0.6))
+                                .cornerRadius(8)
+                        }
                     }
 
                     HStack {
@@ -217,6 +227,30 @@ struct ContentView: View {
         .onChange(of: isRealTime) { _, newValue in
             showDescription = newValue
             model.cancel()
+            if newValue {
+                previousOutput = ""
+                diffedOutput = AttributedString("")
+            }
+        }
+        .onChange(of: model.output) { _, newValue in
+            guard isRealTime else {
+                previousOutput = newValue
+                diffedOutput = AttributedString(newValue)
+                diffedOutput.foregroundColor = .white
+                return
+            }
+
+            let prefix = newValue.commonPrefix(with: previousOutput)
+            let suffix = String(newValue.dropFirst(prefix.count))
+
+            var attr = AttributedString(prefix)
+            attr.foregroundColor = .white
+
+            var suffixAttr = AttributedString(suffix)
+            suffixAttr.foregroundColor = .green
+
+            diffedOutput = attr + suffixAttr
+            previousOutput = newValue
         }
     }
 
