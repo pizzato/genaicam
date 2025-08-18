@@ -6,6 +6,7 @@
 import Foundation
 #if os(iOS)
 import UIKit
+import Vision
 #if canImport(ImagePlayground)
 import ImagePlayground
 #endif
@@ -27,6 +28,35 @@ class PlaygroundImageGenerator {
 
     init() {}
 
+    /// Generate concepts for Image Playground. When a person is detected in the
+    /// input image, the person's region is cropped and used as individual
+    /// concepts. Otherwise the full image is used as a single concept.
+    /// - Parameter cgImage: Source image.
+    /// - Returns: Array of concepts to drive image generation.
+    private func personConcepts(from cgImage: CGImage) -> [ImagePlaygroundConcept] {
+        let request = VNDetectHumanRectanglesRequest()
+        let handler = VNImageRequestHandler(cgImage: cgImage, options: [:])
+        do {
+            try handler.perform([request])
+            if let observations = request.results as? [VNHumanObservation] {
+                let concepts: [ImagePlaygroundConcept] = observations.compactMap { obs in
+                    let rect = VNImageRectForNormalizedRect(
+                        obs.boundingBox,
+                        cgImage.width,
+                        cgImage.height)
+                    guard let cropped = cgImage.cropping(to: rect) else { return nil }
+                    return .image(cropped)
+                }
+                if !concepts.isEmpty {
+                    return concepts
+                }
+            }
+        } catch {
+            // If detection fails, fall back to using the whole image.
+        }
+        return [.image(cgImage)]
+    }
+
     /// Generate a new image based on the provided one using Image Playground.
     /// - Parameters:
     ///   - image: Source image.
@@ -38,7 +68,7 @@ class PlaygroundImageGenerator {
                 creator = try await ImageCreator()
             }
             guard let creator, let cgImage = image.cgImage else { return nil }
-            let concepts: [ImagePlaygroundConcept] = [.image(cgImage)]
+            let concepts = personConcepts(from: cgImage)
 
             // Map our simple `PlaygroundStyle` to the corresponding
             // `ImagePlaygroundStyle`. The ImagePlayground API doesn't expose
