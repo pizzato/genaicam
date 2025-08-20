@@ -29,8 +29,11 @@ enum DescriptionMode: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
-let shortPromptSuffix = "Output is very brief for a less capable image generation task, use 1 to 10 words at most."
-let longPromptSuffix = "Output to be used in image generation prompts."
+//let shortPromptSuffix = "Output is very brief for a less capable image generation task, use maximum of 10 words."
+//let longPromptSuffix = "Output is prompt to reconstruct the image. If describing a person, be specific on gender, age estimate and any distinguishing features, such as ethnicity or hair color, eye colour, etc."
+
+let shortPromptSuffix = "Output is very brief use maximum of 10 words."
+let longPromptSuffix = "Long and detailed description please."
 
 struct ContentView: View {
     @State private var camera = CameraController()

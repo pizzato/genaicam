@@ -14,17 +14,24 @@ struct MoreView: View {
     let longDescription: String
     @State private var showWelcome = false
 
+    private var appName: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "FastVLM"
+    }
+
     var body: some View {
         NavigationStack {
+            
             Form {
+                Button("About " + appName) { showWelcome = true }
+                
                 if !shortDescription.isEmpty {
                     Section("Short Description") {
                         Text(shortDescription)
                             .textSelection(.enabled)
                         HStack {
-                            Button("Copy") { copy(shortDescription) }
+                            Button("") { copy(shortDescription) }
                             ShareLink(item: shortDescription) {
-                                Label("Share", systemImage: "square.and.arrow.up")
+                                Label("Copy and Share", systemImage: "square.and.arrow.up")
                             }
                         }
                     }
@@ -34,15 +41,12 @@ struct MoreView: View {
                         Text(longDescription)
                             .textSelection(.enabled)
                         HStack {
-                            Button("Copy") { copy(longDescription) }
+                            Button("") { copy(longDescription) }
                             ShareLink(item: longDescription) {
-                                Label("Share", systemImage: "square.and.arrow.up")
+                                Label("Copy and Share", systemImage: "square.and.arrow.up")
                             }
                         }
                     }
-                }
-                Section("About") {
-                    Button("Welcome Screen") { showWelcome = true }
                 }
             }
             .navigationTitle("More")

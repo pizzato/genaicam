@@ -12,7 +12,11 @@ struct SettingsView: View {
     @Binding var isRealTime: Bool
     @Binding var showDescription: Bool
     @State private var showWelcome = false
-
+    
+    private var appName: String {
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "FastVLM"
+    }
+    
     var body: some View {
         NavigationStack {
             Form {
@@ -39,9 +43,8 @@ struct SettingsView: View {
                     }
                 }
 
-                Section("About") {
-                    Button("Welcome Screen") { showWelcome = true }
-                }
+
+                Button("About " + appName) { showWelcome = true }
             }
             .navigationTitle("Settings")
             .toolbar {
