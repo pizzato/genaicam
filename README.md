@@ -1,3 +1,48 @@
+# GenAICam
+
+This app is a **proof of concept** exploring privacy-focused, on-device machine learning. It can describe what it sees and generate pictures from those descriptions — all processed locally on your device.
+
+
+Created for fun as a vibe coding experiment with [OpenAI’s Codex](https://openai.com/codex/). It’s released as **open source**, so anyone is welcome to explore, adapt, and modify it. More details and reflections are shared in this [Medium story](https://medium.com/placeholder-link).
+
+## Inspiration and attributions
+
+Inspired by [Lingcam by Masaru Mizuochi](https://lingcam.mizumasa.net/), presented at [CVPR 2025 AI Art](https://thecvf-art.com/project/lingcam/)
+                    
+
+The project starting point was Apple’s [FastVLM repository](https://github.com/apple/ml-fastvlm), which introduced efficient vision encoding for vision-language models also at a [CVPR 2025 paper](https://openaccess.thecvf.com/content/CVPR2025/html/Vasu_FastVLM_Efficient_Vision_Encoding_for_Vision_Language_Models_CVPR_2025_paper.html)."
+
+The image generation is done with [Apple Intelligence Playground](https://developer.apple.com/machine-learning/apple-intelligence-playground/) enabling a fully offline, on-device AI experience.
+
+## Screenshots
+
+<table>
+    <tr>
+        <td><img src="docs/GAC1.PNG" alt="GenAICam - Photo taking and live descriptions" figcaption="Photo taking and live descriptions"></td>
+        <td><img src="docs/GAC2.PNG" alt="GenAICam - Generating photo with short description" figcaption="Generating photo with short description"></td>
+        <td><img src="docs/GAC3.PNG" alt="GenAICam - Generated photo" figcaption="Generated photo"></td>
+        <td><img src="docs/GAC4.PNG" alt="GenAICam - More screen with short and long description" figcaption="More screen with short and long description"></td>
+    </tr>
+</table>
+
+## Disclaimer
+
+This project is provided **as is**, without warranty of any kind. Use at your own risk. No guarantees are made regarding accuracy, reliability, or fitness for any purpose. By using this app, you agree that the developer is not liable for any outcomes, damages, or issues arising from its use.
+
+## Open source and Software Licenses
+
+This project was built on top of Apple's [FastVLM](https://github.com/apple/ml-fastvlm), see the [README](https://github.com/apple/ml-fastvlm/blob/main/README.md) for more details. I have removed the uplink to the main repository as it is not relevant to the original repository, that is, changes here should not create pull-requests over there.
+
+
+
+---
+*** 
+___
+
+Below is the original FastVLM Repo - README
+
+
+
 # FastVLM: Efficient Vision Encoding for Vision Language Models
 
 This is the official repository of
