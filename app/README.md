@@ -3,7 +3,7 @@
 This app is a **proof of concept** exploring privacy-focused, on-device machine learning. It can describe what it sees and generate pictures from those descriptions — all processed locally on your device.
 
 
-Created for fun as a vibe coding experiment with [OpenAI’s Codex](https://openai.com/codex/). It’s released as **open source**, so anyone is welcome to explore, adapt, and modify it. More details and reflections are shared in this [Medium story](https://medium.com/placeholder-link).
+Created for fun as a vibe coding experiment with [OpenAI’s Codex](https://openai.com/codex/). It’s released as **open source**, so anyone is welcome to explore, adapt, and modify it. More details and reflections are shared in this [Medium story](https://medium.com/@pizzato/i-will-never-code-an-app-again-b262893dca8c).
 
 ## Inspiration and attributions
 
