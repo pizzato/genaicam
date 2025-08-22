@@ -11,16 +11,16 @@
 		019A3E1C2D78E73E0055F93B /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = 019A3E1B2D78E73E0055F93B /* MLXLMCommon */; };
 		019A3E1E2D78E7470055F93B /* MLXRandom in Frameworks */ = {isa = PBXBuildFile; productRef = 019A3E1D2D78E7470055F93B /* MLXRandom */; };
 		019A3E202D78E74C0055F93B /* MLXVLM in Frameworks */ = {isa = PBXBuildFile; productRef = 019A3E1F2D78E74C0055F93B /* MLXVLM */; };
-		019A3E212D78E7530055F93B /* Video.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C35372AE2D08C32D00474D34 /* Video.framework */; };
-		019A3E222D78E7530055F93B /* Video.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C35372AE2D08C32D00474D34 /* Video.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		019A3E212D78E7530055F93B /* Video.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C35372AE2D08C32D00474D34 /* Video.framework */; platformFilter = ios; };
+		019A3E222D78E7530055F93B /* Video.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C35372AE2D08C32D00474D34 /* Video.framework */; platformFilter = ios; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 		C3ED544E2D790860005E20B3 /* MLXLMCommon in Frameworks */ = {isa = PBXBuildFile; productRef = C3ED544D2D790860005E20B3 /* MLXLMCommon */; };
 		C3ED54502D790860005E20B3 /* MLXVLM in Frameworks */ = {isa = PBXBuildFile; productRef = C3ED544F2D790860005E20B3 /* MLXVLM */; };
 		C3ED54522D790860005E20B3 /* MLX in Frameworks */ = {isa = PBXBuildFile; productRef = C3ED54512D790860005E20B3 /* MLX */; };
 		C3ED54542D790860005E20B3 /* MLXNN in Frameworks */ = {isa = PBXBuildFile; productRef = C3ED54532D790860005E20B3 /* MLXNN */; };
 		C3ED54582D790A68005E20B3 /* MLXFast in Frameworks */ = {isa = PBXBuildFile; productRef = C3ED54572D790A68005E20B3 /* MLXFast */; };
 		C3ED545B2D790AD6005E20B3 /* Transformers in Frameworks */ = {isa = PBXBuildFile; productRef = C3ED545A2D790AD6005E20B3 /* Transformers */; };
-		C3ED55012D7A0A7A005E20B3 /* FastVLM.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C39BB3E62D79082A005DB8FB /* FastVLM.framework */; };
-		C3ED55022D7A0A7A005E20B3 /* FastVLM.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C39BB3E62D79082A005DB8FB /* FastVLM.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+		C3ED55012D7A0A7A005E20B3 /* FastVLM.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C39BB3E62D79082A005DB8FB /* FastVLM.framework */; platformFilter = ios; };
+		C3ED55022D7A0A7A005E20B3 /* FastVLM.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C39BB3E62D79082A005DB8FB /* FastVLM.framework */; platformFilter = ios; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -387,11 +387,13 @@
 /* Begin PBXTargetDependency section */
 		019A3E242D78E7530055F93B /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			platformFilter = ios;
 			target = C35372AD2D08C32D00474D34 /* Video */;
 			targetProxy = 019A3E232D78E7530055F93B /* PBXContainerItemProxy */;
 		};
 		C3ED55042D7A0A7A005E20B3 /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
+			platformFilter = ios;
 			target = C39BB3E52D79082A005DB8FB /* FastVLM */;
 			targetProxy = C3ED55032D7A0A7A005E20B3 /* PBXContainerItemProxy */;
 		};
@@ -437,7 +439,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 0.1.0;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				DEVELOPMENT_ASSET_PATHS = "\"FastVLM App/Preview Content\"";
@@ -473,6 +475,7 @@
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = NO;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = NO;
+				INFOPLIST_KEY_UILaunchStoryboardName = AppLaunchScreen;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
@@ -486,16 +489,17 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = ml.pizzato.GenAICam;
+				PRODUCT_BUNDLE_IDENTIFIER = cc.pizzato.GenAICam;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = 1;
 				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Debug;
@@ -539,7 +543,7 @@
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 0.1.0;
+				CURRENT_PROJECT_VERSION = 1;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				DEVELOPMENT_ASSET_PATHS = "\"FastVLM App/Preview Content\"";
@@ -569,6 +573,7 @@
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphoneos*]" = NO;
 				"INFOPLIST_KEY_UILaunchScreen_Generation[sdk=iphonesimulator*]" = NO;
+				INFOPLIST_KEY_UILaunchStoryboardName = AppLaunchScreen;
 				INFOPLIST_KEY_UIRequiresFullScreen = YES;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphoneos*]" = UIStatusBarStyleDefault;
 				"INFOPLIST_KEY_UIStatusBarStyle[sdk=iphonesimulator*]" = UIStatusBarStyleDefault;
@@ -581,15 +586,16 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = ml.pizzato.GenAICam;
+				PRODUCT_BUNDLE_IDENTIFIER = cc.pizzato.GenAICam;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = auto;
-				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator macosx xros xrsimulator";
+				SUPPORTED_PLATFORMS = "iphoneos iphonesimulator";
+				SUPPORTS_MACCATALYST = NO;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.0;
-				TARGETED_DEVICE_FAMILY = "1,2,7";
+				TARGETED_DEVICE_FAMILY = 1;
 				XROS_DEPLOYMENT_TARGET = 2.2;
 			};
 			name = Release;
