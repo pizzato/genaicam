@@ -1,0 +1,34 @@
+{
+  "object": {
+    "pins": [
+      {
+        "package": "mlx-swift-examples",
+        "repositoryURL": "https://github.com/ml-explore/mlx-swift-examples",
+        "state": {
+          "branch": null,
+          "revision": "6ef303b84ec69e2e1e1da68f2059e99ee1dcef4d",
+          "version": "2.21.2"
+        }
+      },
+      {
+        "package": "mlx-swift",
+        "repositoryURL": "https://github.com/ml-explore/mlx-swift",
+        "state": {
+          "branch": null,
+          "revision": "70dbb62128a5a1471a5ab80363430adb33470cab",
+          "version": "0.21.2"
+        }
+      },
+      {
+        "package": "swift-transformers",
+        "repositoryURL": "https://github.com/huggingface/swift-transformers",
+        "state": {
+          "branch": null,
+          "revision": "be855fac725dbae27264e47a3eb535cc422a4ba8",
+          "version": "0.1.18"
+        }
+      }
+    ]
+  },
+  "version": 1
+}
