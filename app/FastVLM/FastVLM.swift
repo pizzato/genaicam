@@ -457,10 +457,10 @@ private class FastVLMMultiModalProjector: Module, UnaryLayer {
 public class FastVLM: Module, VLMModel, KVCacheDimensionProvider {
 
     static public var modelConfiguration: ModelConfiguration {
-        let bundle = Bundle(for: FastVLM.self)
-        let url = bundle.url(forResource: "config", withExtension: "json")!
-            .resolvingSymlinksInPath()
-            .deletingLastPathComponent()
+        let fm = FileManager.default
+        let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let url = support.appendingPathComponent("FastVLM/model", isDirectory: true)
+        try? fm.createDirectory(at: url, withIntermediateDirectories: true)
         return ModelConfiguration(directory: url)
     }
 

@@ -10,6 +10,9 @@ import MLX
 import MLXLMCommon
 import MLXRandom
 import MLXVLM
+#if canImport(Compression)
+import Compression
+#endif
 
 @Observable
 @MainActor
@@ -25,7 +28,16 @@ class FastVLMModel {
         case loaded(ModelContainer)
     }
 
-    private let modelConfiguration = FastVLM.modelConfiguration
+    private let modelDirectory: URL = {
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return support.appendingPathComponent("FastVLM/model", isDirectory: true)
+    }()
+
+    private let modelDownloadURL = URL(string: "https://ml-site.cdn-apple.com/datasets/fastvlm/llava-fastvithd_0.5b_stage3_llm.fp16.zip")!
+
+    private var modelConfiguration: ModelConfiguration {
+        FastVLM.modelConfiguration
+    }
 
     /// parameters controlling the output
     let generateParameters = GenerateParameters(temperature: 0.0)
@@ -51,11 +63,22 @@ class FastVLMModel {
         FastVLM.register(modelFactory: VLMModelFactory.shared)
     }
 
+    private func ensureModelAvailable() async throws {
+        let configURL = modelDirectory.appendingPathComponent("config.json")
+        if FileManager.default.fileExists(atPath: configURL.path) { return }
+
+        try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
+        let (zipURL, _) = try await URLSession.shared.download(from: modelDownloadURL)
+        try FileManager.default.unzipItem(at: zipURL, to: modelDirectory)
+    }
+
     private func _load() async throws -> ModelContainer {
         switch loadState {
         case .idle:
             // limit the buffer cache
             MLX.GPU.set(cacheLimit: 20 * 1024 * 1024)
+
+            try await ensureModelAvailable()
 
             let modelContainer = try await VLMModelFactory.shared.loadContainer(
                 configuration: modelConfiguration
