@@ -107,7 +107,7 @@ struct WelcomeView: View {
                         .font(.headline)
 
                     MarkdownText(markdown:
-                        "This project was built on top of Apple's [FastVLM](https://github.com/apple/ml-fastvlm), see the [README](https://github.com/apple/ml-fastvlm/blob/main/README.md) for more details."
+                        "This project was built on top of Apple's [FastVLM](https://github.com/apple/ml-fastvlm), see the [README](https://github.com/pizzato/genaicam/blob/main/README.md) for more details."
                     )
 
                 }

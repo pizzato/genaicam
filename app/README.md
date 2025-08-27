@@ -31,7 +31,7 @@ This project is provided **as is**, without warranty of any kind. Use at your ow
 
 ## Open source and Software Licenses
 
-This project was built on top of Apple's [FastVLM](https://github.com/apple/ml-fastvlm), see the [README](https://github.com/apple/ml-fastvlm/blob/main/README.md) for more details. I have removed the uplink to the main repository as it is not relevant to the original repository, that is, changes here should not create pull-requests over there.
+This project was built on top of Apple's [FastVLM](https://github.com/apple/ml-fastvlm), see the [README](https://github.com/pizzato/genaicam/blob/main/README.md) for more details. I have removed the uplink to the main repository as it is not relevant to the original repository, that is, changes here should not create pull-requests over there.
 
 
 
