@@ -10,11 +10,8 @@ import MLX
 import MLXLMCommon
 import MLXRandom
 import MLXVLM
-#if canImport(Archive)
-import Archive
-#endif
-#if canImport(Compression)
-import Compression
+#if canImport(ZIPFoundation)
+import ZIPFoundation
 #endif
 
 @Observable
@@ -76,7 +73,7 @@ class FastVLMModel {
     }
 
     private func unzipItem(at sourceURL: URL, to destinationURL: URL) throws {
-        #if canImport(Archive)
+        #if canImport(ZIPFoundation)
         let fileManager = FileManager.default
         let archive = try Archive(url: sourceURL, accessMode: .read)
         for entry in archive {
@@ -88,18 +85,11 @@ class FastVLMModel {
             _ = try archive.extract(entry, to: entryURL)
         }
         #else
-        let process = Process()
-        process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
-        process.arguments = [sourceURL.path, "-d", destinationURL.path]
-        try process.run()
-        process.waitUntilExit()
-        guard process.terminationStatus == 0 else {
-            throw NSError(
-                domain: "FastVLMModel",
-                code: Int(process.terminationStatus),
-                userInfo: [NSLocalizedDescriptionKey: "Failed to unzip archive"]
-            )
-        }
+        throw NSError(
+            domain: "FastVLMModel",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: "ZIPFoundation not available"]
+        )
         #endif
     }
 
