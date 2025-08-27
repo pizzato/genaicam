@@ -10,6 +10,9 @@ import MLX
 import MLXLMCommon
 import MLXRandom
 import MLXVLM
+#if canImport(Archive)
+import Archive
+#endif
 #if canImport(Compression)
 import Compression
 #endif
