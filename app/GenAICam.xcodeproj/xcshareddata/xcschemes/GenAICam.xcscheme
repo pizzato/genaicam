@@ -18,7 +18,7 @@
                BlueprintIdentifier = "019A3E092D78E6A00055F93B"
                BuildableName = "GenAICam.app"
                BlueprintName = "GenAICam"
-               ReferencedContainer = "container:FastVLM.xcodeproj">
+               ReferencedContainer = "container:GenAICam.xcodeproj">
             </BuildableReference>
          </BuildActionEntry>
       </BuildActionEntries>
@@ -47,7 +47,7 @@
             BlueprintIdentifier = "019A3E092D78E6A00055F93B"
             BuildableName = "GenAICam.app"
             BlueprintName = "GenAICam"
-            ReferencedContainer = "container:FastVLM.xcodeproj">
+            ReferencedContainer = "container:GenAICam.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </LaunchAction>
@@ -64,7 +64,7 @@
             BlueprintIdentifier = "019A3E092D78E6A00055F93B"
             BuildableName = "GenAICam.app"
             BlueprintName = "GenAICam"
-            ReferencedContainer = "container:FastVLM.xcodeproj">
+            ReferencedContainer = "container:GenAICam.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
    </ProfileAction>

@@ -64,7 +64,7 @@
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
-		120A44852D9B05A900E244A3 /* Exceptions for "FastVLM App" folder in "GenAICam" target */ = {
+		120A44852D9B05A900E244A3 /* Exceptions for "GenAICam" folder in "GenAICam" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
 				Info.plist,
@@ -88,12 +88,12 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
-		019A3E0B2D78E6A00055F93B /* FastVLM App */ = {
+		019A3E0B2D78E6A00055F93B /* GenAICam */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
-				120A44852D9B05A900E244A3 /* Exceptions for "FastVLM App" folder in "GenAICam" target */,
+				120A44852D9B05A900E244A3 /* Exceptions for "GenAICam" folder in "GenAICam" target */,
 			);
-			path = "FastVLM App";
+			path = "GenAICam";
 			sourceTree = "<group>";
 		};
 		C32B4A802DA4805400EF663D /* Configuration */ = {
@@ -163,7 +163,7 @@
 				12FFAF3D2DC93583009C4EFA /* get_pretrained_mlx_model.sh */,
 				C32B4A802DA4805400EF663D /* Configuration */,
 				C35372AF2D08C32D00474D34 /* Video */,
-				019A3E0B2D78E6A00055F93B /* FastVLM App */,
+				019A3E0B2D78E6A00055F93B /* GenAICam */,
 				C39BB3E72D79082A005DB8FB /* FastVLM */,
 				C35EDB7F2D076C3C00757E80 /* Frameworks */,
 				C35EDB702D076A5A00757E80 /* Products */,
@@ -223,7 +223,7 @@
 				C3ED55042D7A0A7A005E20B3 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
-				019A3E0B2D78E6A00055F93B /* FastVLM App */,
+				019A3E0B2D78E6A00055F93B /* GenAICam */,
 			);
 			name = GenAICam;
 			packageProductDependencies = (
@@ -232,7 +232,7 @@
 				019A3E1D2D78E7470055F93B /* MLXRandom */,
 				019A3E1F2D78E74C0055F93B /* MLXVLM */,
 			);
-			productName = FastVLMCameraExample;
+			productName = GenAICam;
 			productReference = 019A3E0A2D78E6A00055F93B /* GenAICam.app */;
 			productType = "com.apple.product-type.application";
 		};
@@ -310,7 +310,7 @@
 					};
 				};
 			};
-			buildConfigurationList = C35EDB672D07699400757E80 /* Build configuration list for PBXProject "FastVLM" */;
+			buildConfigurationList = C35EDB672D07699400757E80 /* Build configuration list for PBXProject "GenAICam" */;
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
@@ -433,14 +433,14 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_ENTITLEMENTS = "FastVLM App/FastVLM.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "GenAICam/GenAICam.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 0.1.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = dwarf;
-				DEVELOPMENT_ASSET_PATHS = "\"FastVLM App/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"GenAICam/Preview Content\"";
 				DEVELOPMENT_TEAM = 573X6DYYZ4;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_PREVIEWS = YES;
@@ -462,7 +462,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "FastVLM App/Info.plist";
+				INFOPLIST_FILE = "GenAICam/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = GenAICam;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use camera to get live feed of images";
@@ -486,7 +486,7 @@
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = ml.pizzato.GenAICam;
+                                PRODUCT_BUNDLE_IDENTIFIER = com.genai.GenAICam;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = auto;
@@ -535,14 +535,14 @@
 				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
 				CLANG_WARN_UNREACHABLE_CODE = YES;
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
-				CODE_SIGN_ENTITLEMENTS = "FastVLM App/FastVLM.entitlements";
+				CODE_SIGN_ENTITLEMENTS = "GenAICam/GenAICam.entitlements";
 				CODE_SIGN_IDENTITY = "Apple Development";
 				CODE_SIGN_STYLE = Automatic;
 				COPY_PHASE_STRIP = NO;
 				CURRENT_PROJECT_VERSION = 0.1.0;
 				DEAD_CODE_STRIPPING = YES;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
-				DEVELOPMENT_ASSET_PATHS = "\"FastVLM App/Preview Content\"";
+				DEVELOPMENT_ASSET_PATHS = "\"GenAICam/Preview Content\"";
 				DEVELOPMENT_TEAM = 573X6DYYZ4;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -558,7 +558,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_FILE = "FastVLM App/Info.plist";
+				INFOPLIST_FILE = "GenAICam/Info.plist";
 				INFOPLIST_KEY_CFBundleDisplayName = GenAICam;
 				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.photography";
 				INFOPLIST_KEY_NSCameraUsageDescription = "Use camera to get live feed of images";
@@ -581,7 +581,7 @@
 				MARKETING_VERSION = 1.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = ml.pizzato.GenAICam;
+                                PRODUCT_BUNDLE_IDENTIFIER = com.genai.GenAICam;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = auto;
@@ -939,11 +939,11 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
-				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
-				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
-				MTL_FAST_MATH = YES;
-				ONLY_ACTIVE_ARCH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = mlx.FastVLM;
+                                MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+                                MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+                                MTL_FAST_MATH = YES;
+                                ONLY_ACTIVE_ARCH = YES;
+                                PRODUCT_BUNDLE_IDENTIFIER = com.genai.FastVLM;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = auto;
 				SKIP_INSTALL = YES;
@@ -1033,10 +1033,10 @@
 				MACOSX_DEPLOYMENT_TARGET = 15.0;
 				MARKETING_VERSION = 1.0;
 				MODULE_VERIFIER_SUPPORTED_LANGUAGES = "objective-c objective-c++";
-				MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
-				MTL_ENABLE_DEBUG_INFO = NO;
-				MTL_FAST_MATH = YES;
-				PRODUCT_BUNDLE_IDENTIFIER = mlx.FastVLM;
+                                MODULE_VERIFIER_SUPPORTED_LANGUAGE_STANDARDS = "gnu17 gnu++20";
+                                MTL_ENABLE_DEBUG_INFO = NO;
+                                MTL_FAST_MATH = YES;
+                                PRODUCT_BUNDLE_IDENTIFIER = com.genai.FastVLM;
 				PRODUCT_NAME = "$(TARGET_NAME:c99extidentifier)";
 				SDKROOT = auto;
 				SKIP_INSTALL = YES;
@@ -1073,7 +1073,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		C35EDB672D07699400757E80 /* Build configuration list for PBXProject "FastVLM" */ = {
+		C35EDB672D07699400757E80 /* Build configuration list for PBXProject "GenAICam" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				C35EDB682D07699400757E80 /* Debug */,
