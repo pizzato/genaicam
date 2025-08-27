@@ -6,7 +6,7 @@
 import SwiftUI
 
 @main
-struct FastVLMApp: App {
+struct GenAICamApp: App {
     var body: some Scene {
         WindowGroup {
             ContentView()

@@ -15,7 +15,7 @@ struct MoreView: View {
     @State private var showWelcome = false
 
     private var appName: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "FastVLM"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "GenAICam"
     }
 
     var body: some View {
