@@ -69,7 +69,20 @@ class FastVLMModel {
 
         try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
         let (zipURL, _) = try await URLSession.shared.download(from: modelDownloadURL)
-        try FileManager.default.unzipItem(at: zipURL, to: modelDirectory)
+        try unzipItem(at: zipURL, to: modelDirectory)
+    }
+
+    private func unzipItem(at sourceURL: URL, to destinationURL: URL) throws {
+        let fileManager = FileManager.default
+        let archive = try Archive(url: sourceURL, accessMode: .read)
+        for entry in archive {
+            let entryURL = destinationURL.appendingPathComponent(entry.path)
+            try fileManager.createDirectory(
+                at: entryURL.deletingLastPathComponent(),
+                withIntermediateDirectories: true
+            )
+            _ = try archive.extract(entry, to: entryURL)
+        }
     }
 
     private func _load() async throws -> ModelContainer {
