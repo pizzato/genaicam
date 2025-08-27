@@ -76,6 +76,7 @@ class FastVLMModel {
     }
 
     private func unzipItem(at sourceURL: URL, to destinationURL: URL) throws {
+        #if canImport(Archive)
         let fileManager = FileManager.default
         let archive = try Archive(url: sourceURL, accessMode: .read)
         for entry in archive {
@@ -86,6 +87,20 @@ class FastVLMModel {
             )
             _ = try archive.extract(entry, to: entryURL)
         }
+        #else
+        let process = Process()
+        process.executableURL = URL(fileURLWithPath: "/usr/bin/unzip")
+        process.arguments = [sourceURL.path, "-d", destinationURL.path]
+        try process.run()
+        process.waitUntilExit()
+        guard process.terminationStatus == 0 else {
+            throw NSError(
+                domain: "FastVLMModel",
+                code: Int(process.terminationStatus),
+                userInfo: [NSLocalizedDescriptionKey: "Failed to unzip archive"]
+            )
+        }
+        #endif
     }
 
     private func _load() async throws -> ModelContainer {
