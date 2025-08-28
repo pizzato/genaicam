@@ -14,6 +14,7 @@ import MLXVLM
 import ZIPFoundation
 #endif
 import Combine
+import SwiftUI
 
 @MainActor
 class FastVLMModel: ObservableObject {
@@ -77,7 +78,9 @@ class FastVLMModel: ObservableObject {
     /// - Returns: `true` on success, `false` if an error occurred.
     public func download() async -> Bool {
         await MainActor.run {
-            self.downloadProgress = nil
+            withAnimation(.linear) {
+                self.downloadProgress = 0
+            }
             self.modelInfo = "Downloading..."
         }
 
@@ -135,10 +138,14 @@ class FastVLMModel: ObservableObject {
             }
             Task { @MainActor in
                 if let progress {
-                    self.downloadProgress = progress
+                    withAnimation(.linear) {
+                        self.downloadProgress = progress
+                    }
                     self.modelInfo = "Downloading \(Int(progress * 100))%"
                 } else {
-                    self.downloadProgress = nil
+                    withAnimation(.linear) {
+                        self.downloadProgress = nil
+                    }
                     self.modelInfo = "Downloading..."
                 }
             }
@@ -157,12 +164,27 @@ class FastVLMModel: ObservableObject {
         try fm.moveItem(at: downloadedURL, to: zipURL)
 
         await MainActor.run {
-            self.modelInfo = "Extracting model..."
-            self.downloadProgress = nil
+            withAnimation(.linear) {
+                self.downloadProgress = 0
+            }
+            self.modelInfo = "Extracting 0%"
         }
         print("[FastVLM] Extracting archive...")
-        try unzipItem(at: zipURL, to: tempDir)
+        try unzipItem(at: zipURL, to: tempDir) { progress in
+            print(String(format: "[FastVLM] Extraction progress: %.0f%%", progress * 100))
+            Task { @MainActor in
+                withAnimation(.linear) {
+                    self.downloadProgress = progress
+                }
+                self.modelInfo = "Extracting \(Int(progress * 100))%"
+            }
+        }
         print("[FastVLM] Extraction complete")
+
+        await MainActor.run {
+            self.modelInfo = "Finalizing..."
+            self.downloadProgress = nil
+        }
 
         // Copy extracted contents (which reside under modelIdentifier) to modelDirectory
         let extractedRoot = tempDir.appendingPathComponent(modelIdentifier, isDirectory: true)
@@ -177,17 +199,21 @@ class FastVLMModel: ObservableObject {
         print("[FastVLM] Copied model files to cache at \(modelDirectory.path)")
     }
 
-    private func unzipItem(at sourceURL: URL, to destinationURL: URL) throws {
+    private func unzipItem(at sourceURL: URL, to destinationURL: URL,
+                           progressHandler: (Double) -> Void) throws {
         #if canImport(ZIPFoundation)
         let fileManager = FileManager.default
         let archive = try Archive(url: sourceURL, accessMode: .read)
-        for entry in archive {
+        let entries = Array(archive)
+        let total = entries.count
+        for (index, entry) in entries.enumerated() {
             let entryURL = destinationURL.appendingPathComponent(entry.path)
             try fileManager.createDirectory(
                 at: entryURL.deletingLastPathComponent(),
                 withIntermediateDirectories: true
             )
             _ = try archive.extract(entry, to: entryURL)
+            progressHandler(Double(index + 1) / Double(total))
         }
         print("[FastVLM] Unzipped archive using ZIPFoundation")
         #else

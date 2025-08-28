@@ -15,12 +15,10 @@ struct ModelDownloadView: View {
                     ProgressView(value: progress, total: 1.0)
                         .progressViewStyle(.linear)
                         .padding()
-                        .animation(.linear, value: model.downloadProgress)
                 } else {
                     ProgressView()
                         .progressViewStyle(.linear)
                         .padding()
-                        .animation(.linear, value: model.downloadProgress)
                 }
                 Text(model.modelInfo)
             } else {
