@@ -22,6 +22,7 @@ class FastVLMModel {
     public var modelInfo = ""
     public var output = ""
     public var promptTime: String = ""
+    public var downloadProgress: Double = 0.0
 
     enum LoadState {
         case idle
@@ -63,12 +64,51 @@ class FastVLMModel {
         FastVLM.register(modelFactory: VLMModelFactory.shared)
     }
 
+    static func modelExists() -> Bool {
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let config = support.appendingPathComponent("FastVLM/model/config.json")
+        return FileManager.default.fileExists(atPath: config.path)
+    }
+
+    public func download() async {
+        do {
+            try await ensureModelAvailable()
+            await MainActor.run {
+                self.modelInfo = "Download complete"
+                self.downloadProgress = 1.0
+            }
+        } catch {
+            await MainActor.run {
+                self.modelInfo = "Error downloading model: \(error)"
+            }
+        }
+    }
+
     private func ensureModelAvailable() async throws {
         let configURL = modelDirectory.appendingPathComponent("config.json")
         if FileManager.default.fileExists(atPath: configURL.path) { return }
 
         try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
-        let (zipURL, _) = try await URLSession.shared.download(from: modelDownloadURL)
+        class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
+            let progressHandler: (Double) -> Void
+            init(progressHandler: @escaping (Double) -> Void) { self.progressHandler = progressHandler }
+            func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
+                            didWriteData bytesWritten: Int64, totalBytesWritten: Int64,
+                            totalBytesExpectedToWrite: Int64) {
+                guard totalBytesExpectedToWrite > 0 else { return }
+                let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
+                progressHandler(progress)
+            }
+        }
+
+        let delegate = DownloadDelegate { progress in
+            Task { @MainActor in
+                self.downloadProgress = progress
+                self.modelInfo = "Downloading model: \(Int(progress * 100))%"
+            }
+        }
+        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
+        let (zipURL, _) = try await session.download(from: modelDownloadURL)
         try unzipItem(at: zipURL, to: modelDirectory)
     }
 

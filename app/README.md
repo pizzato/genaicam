@@ -82,7 +82,7 @@ To explore how the other models work for your use-case, simply re-run the `get_p
 
 ### Model Download
 
-The FastVLM weights are no longer bundled with the project. The first time the app runs it will download the default model automatically and cache it in the application support directory. No manual download step is required.
+The FastVLM weights are no longer bundled with the project. On first launch the app shows a screen explaining that Apple’s FastVLM model (slightly above 1 GB) must be fetched once over the internet. After tapping **Download Model**, a progress bar tracks the download and the archive is cached in the application support directory so subsequent runs work fully offline.
 
 ### Custom Model
 

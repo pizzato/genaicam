@@ -7,9 +7,15 @@ import SwiftUI
 
 @main
 struct GenAICamApp: App {
+    @State private var needsModelDownload = !FastVLMModel.modelExists()
+
     var body: some Scene {
         WindowGroup {
-            ContentView()
+            if needsModelDownload {
+                ModelDownloadView(needsModelDownload: $needsModelDownload)
+            } else {
+                ContentView()
+            }
         }
     }
 }
