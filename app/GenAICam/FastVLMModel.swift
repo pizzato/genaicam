@@ -113,6 +113,11 @@ class FastVLMModel {
                 let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
                 progressHandler(progress)
             }
+
+            func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
+                            didFinishDownloadingTo location: URL) {
+                // Required by URLSessionDownloadDelegate; handled by async API.
+            }
         }
 
         let delegate = DownloadDelegate { progress in
