@@ -10,22 +10,39 @@ import MLX
 import MLXLMCommon
 import MLXRandom
 import MLXVLM
+#if canImport(ZIPFoundation)
+import ZIPFoundation
+#endif
+import Combine
+import SwiftUI
 
-@Observable
 @MainActor
-class FastVLMModel {
+class FastVLMModel: ObservableObject {
 
-    public var running = false
-    public var modelInfo = ""
-    public var output = ""
-    public var promptTime: String = ""
+    @Published public var running = false
+    @Published public var modelInfo = ""
+    @Published public var output = ""
+    @Published public var promptTime: String = ""
+    @Published public var downloadProgress: Double? = nil
 
     enum LoadState {
         case idle
         case loaded(ModelContainer)
     }
 
-    private let modelConfiguration = FastVLM.modelConfiguration
+    private let modelDirectory: URL = {
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        return support.appendingPathComponent("FastVLM/model", isDirectory: true)
+    }()
+
+    private let modelIdentifier = "llava-fastvithd_0.5b_stage3_llm.fp16"
+    private var modelDownloadURL: URL {
+        URL(string: "https://ml-site.cdn-apple.com/datasets/fastvlm/\(modelIdentifier).zip")!
+    }
+
+    private var modelConfiguration: ModelConfiguration {
+        FastVLM.modelConfiguration
+    }
 
     /// parameters controlling the output
     let generateParameters = GenerateParameters(temperature: 0.0)
@@ -45,10 +62,177 @@ class FastVLMModel {
         case generatingResponse = "Generating Response"
     }
 
-    public var evaluationState = EvaluationState.idle
+    @Published public var evaluationState = EvaluationState.idle
 
     public init() {
         FastVLM.register(modelFactory: VLMModelFactory.shared)
+    }
+
+    static func modelExists() -> Bool {
+        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let config = support.appendingPathComponent("FastVLM/model/config.json")
+        return FileManager.default.fileExists(atPath: config.path)
+    }
+
+    /// Downloads the model archive if it is not already cached.
+    /// - Returns: `true` on success, `false` if an error occurred.
+    public func download() async -> Bool {
+        await MainActor.run {
+            withAnimation(.linear) {
+                self.downloadProgress = 0
+            }
+            self.modelInfo = "Downloading..."
+        }
+
+        print("[FastVLM] Starting model download from \(modelDownloadURL.absoluteString)")
+        do {
+            try await ensureModelAvailable()
+            await MainActor.run {
+                self.modelInfo = "Download complete"
+                self.downloadProgress = 1.0
+            }
+            print("[FastVLM] Model download and extraction finished")
+            return true
+        } catch {
+            print("[FastVLM] Model download failed: \(error.localizedDescription)")
+            await MainActor.run {
+                self.modelInfo = "Error downloading model: \(error.localizedDescription)"
+            }
+            return false
+        }
+    }
+
+    private func ensureModelAvailable() async throws {
+        let configURL = modelDirectory.appendingPathComponent("config.json")
+        if FileManager.default.fileExists(atPath: configURL.path) { return }
+
+        let fm = FileManager.default
+        try fm.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
+
+        final class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
+            let progressHandler: (Double?) -> Void
+            init(progressHandler: @escaping (Double?) -> Void) { self.progressHandler = progressHandler }
+
+            func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
+                            didWriteData bytesWritten: Int64, totalBytesWritten: Int64,
+                            totalBytesExpectedToWrite: Int64) {
+                if totalBytesExpectedToWrite > 0 {
+                    let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
+                    progressHandler(progress)
+                } else {
+                    progressHandler(nil)
+                }
+            }
+
+            func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
+                            didFinishDownloadingTo location: URL) {
+                // Required by URLSessionDownloadDelegate; handled by async API.
+            }
+        }
+
+        let delegate = DownloadDelegate { progress in
+            if let progress {
+                print(String(format: "[FastVLM] Download progress: %.0f%%", progress * 100))
+            } else {
+                print("[FastVLM] Downloading model (progress unavailable)")
+            }
+            Task { @MainActor in
+                if let progress {
+                    withAnimation(.linear) {
+                        self.downloadProgress = progress
+                    }
+                    self.modelInfo = "Downloading \(Int(progress * 100))%"
+                } else {
+                    withAnimation(.linear) {
+                        self.downloadProgress = nil
+                    }
+                    self.modelInfo = "Downloading..."
+                }
+            }
+        }
+
+        let session = URLSession(configuration: .default)
+
+        // Temporary workspace
+        let tempDir = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: tempDir) }
+
+        let (downloadedURL, _) = try await session.download(from: modelDownloadURL, delegate: delegate)
+        print("[FastVLM] Downloaded archive to \(downloadedURL.path)")
+        let zipURL = tempDir.appendingPathComponent("model.zip")
+        try fm.moveItem(at: downloadedURL, to: zipURL)
+
+        await MainActor.run {
+            withAnimation(.linear) {
+                self.downloadProgress = 0
+            }
+            self.modelInfo = "Extracting 0%"
+        }
+        print("[FastVLM] Extracting archive...")
+        try await unzipItem(at: zipURL, to: tempDir) { progress in
+            print(String(format: "[FastVLM] Extraction progress: %.0f%%", progress * 100))
+            Task { @MainActor in
+                withAnimation(.linear) {
+                    self.downloadProgress = progress
+                }
+                self.modelInfo = "Extracting \(Int(progress * 100))%"
+            }
+        }
+        print("[FastVLM] Extraction complete")
+
+        await MainActor.run {
+            self.modelInfo = "Finalizing..."
+            self.downloadProgress = nil
+        }
+
+        // Copy extracted contents (which reside under modelIdentifier) to modelDirectory
+        let extractedRoot = tempDir.appendingPathComponent(modelIdentifier, isDirectory: true)
+        let files = try fm.contentsOfDirectory(at: extractedRoot, includingPropertiesForKeys: nil)
+        for file in files {
+            let dest = modelDirectory.appendingPathComponent(file.lastPathComponent)
+            if fm.fileExists(atPath: dest.path) {
+                try fm.removeItem(at: dest)
+            }
+            try fm.moveItem(at: file, to: dest)
+        }
+        print("[FastVLM] Copied model files to cache at \(modelDirectory.path)")
+    }
+
+    private func unzipItem(at sourceURL: URL, to destinationURL: URL,
+                           progressHandler: @escaping (Double) -> Void) async throws {
+        #if canImport(ZIPFoundation)
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    let fileManager = FileManager.default
+                    let archive = try Archive(url: sourceURL, accessMode: .read)
+                    let entries = Array(archive)
+                    let total = entries.count
+                    for (index, entry) in entries.enumerated() {
+                        let entryURL = destinationURL.appendingPathComponent(entry.path)
+                        try fileManager.createDirectory(
+                            at: entryURL.deletingLastPathComponent(),
+                            withIntermediateDirectories: true
+                        )
+                        _ = try archive.extract(entry, to: entryURL)
+                        progressHandler(Double(index + 1) / Double(total))
+                    }
+                    print("[FastVLM] Unzipped archive using ZIPFoundation")
+                    continuation.resume(returning: ())
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
+        }
+        #else
+        print("[FastVLM] ZIPFoundation not available for extraction")
+        throw NSError(
+            domain: "FastVLMModel",
+            code: -1,
+            userInfo: [NSLocalizedDescriptionKey: "ZIPFoundation not available"]
+        )
+        #endif
     }
 
     private func _load() async throws -> ModelContainer {
@@ -56,6 +240,8 @@ class FastVLMModel {
         case .idle:
             // limit the buffer cache
             MLX.GPU.set(cacheLimit: 20 * 1024 * 1024)
+
+            try await ensureModelAvailable()
 
             let modelContainer = try await VLMModelFactory.shared.loadContainer(
                 configuration: modelConfiguration

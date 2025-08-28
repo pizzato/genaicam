@@ -260,21 +260,26 @@ private enum Vision {
     fileprivate class VisionModelCoreML {
 
         let lock = NSLock()
-        var _model: fastvithd?
+        var _model: MLModel?
 
-        init() {
-        }
+        init() {}
 
-        func load() throws -> fastvithd {
+        func load() throws -> MLModel {
             try lock.withLock {
                 if let model = _model { return model }
-                let model = try fastvithd()
+
+                let fm = FileManager.default
+                let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                let packageURL = support
+                    .appendingPathComponent("FastVLM/model/fastvithd.mlpackage")
+                let compiledURL = try MLModel.compileModel(at: packageURL)
+                let model = try MLModel(contentsOf: compiledURL)
                 _model = model
                 return model
             }
         }
 
-        public func model() -> fastvithd {
+        public func model() -> MLModel {
             try! load()
         }
 
@@ -299,10 +304,14 @@ private enum Vision {
                     strides: strides.map { .init(value: $0) })
 
                 // inference
-                let output = try! model().prediction(images: array)
-                precondition(output.image_features.shape == [1, 256, 3072])
-                precondition(output.image_features.dataType == .float32)
-                return output.image_features.withUnsafeBytes { ptr in
+                let provider = try! MLDictionaryFeatureProvider(
+                    dictionary: ["images": array])
+                let output = try! model().prediction(from: provider)
+                guard let features = output.featureValue(for: "image_features")?.multiArrayValue
+                else { fatalError("Missing image_features output") }
+                precondition(features.shape == [1, 256, 3072])
+                precondition(features.dataType == .float32)
+                return features.withUnsafeBytes { ptr in
                     MLXArray(ptr, [1, 256, 3072], type: Float32.self)
                 }
             }
@@ -457,10 +466,10 @@ private class FastVLMMultiModalProjector: Module, UnaryLayer {
 public class FastVLM: Module, VLMModel, KVCacheDimensionProvider {
 
     static public var modelConfiguration: ModelConfiguration {
-        let bundle = Bundle(for: FastVLM.self)
-        let url = bundle.url(forResource: "config", withExtension: "json")!
-            .resolvingSymlinksInPath()
-            .deletingLastPathComponent()
+        let fm = FileManager.default
+        let support = fm.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+        let url = support.appendingPathComponent("FastVLM/model", isDirectory: true)
+        try? fm.createDirectory(at: url, withIntermediateDirectories: true)
         return ModelConfiguration(directory: url)
     }
 
