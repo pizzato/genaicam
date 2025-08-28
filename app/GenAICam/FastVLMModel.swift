@@ -77,8 +77,8 @@ class FastVLMModel: ObservableObject {
     /// - Returns: `true` on success, `false` if an error occurred.
     public func download() async -> Bool {
         await MainActor.run {
-            self.downloadProgress = 0.0
-            self.modelInfo = "Preparing download..."
+            self.downloadProgress = nil
+            self.modelInfo = "Downloading..."
         }
 
         print("[FastVLM] Starting model download from \(modelDownloadURL.absoluteString)")
@@ -136,10 +136,10 @@ class FastVLMModel: ObservableObject {
             Task { @MainActor in
                 if let progress {
                     self.downloadProgress = progress
-                    self.modelInfo = "Downloading model: \(Int(progress * 100))%"
+                    self.modelInfo = "Downloading \(Int(progress * 100))%"
                 } else {
                     self.downloadProgress = nil
-                    self.modelInfo = "Downloading model..."
+                    self.modelInfo = "Downloading..."
                 }
             }
         }
