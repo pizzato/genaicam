@@ -89,15 +89,21 @@ class FastVLMModel {
         if FileManager.default.fileExists(atPath: configURL.path) { return }
 
         try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
-        class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
+        final class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
             let progressHandler: (Double) -> Void
             init(progressHandler: @escaping (Double) -> Void) { self.progressHandler = progressHandler }
+
             func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
                             didWriteData bytesWritten: Int64, totalBytesWritten: Int64,
                             totalBytesExpectedToWrite: Int64) {
                 guard totalBytesExpectedToWrite > 0 else { return }
                 let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
                 progressHandler(progress)
+            }
+
+            func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
+                            didFinishDownloadingTo location: URL) {
+                // no-op: URL provided via async API
             }
         }
 
