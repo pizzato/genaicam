@@ -78,25 +78,13 @@ There are 3 pretrained sizes of FastVLM to choose from:
 
 To download any FastVLM listed above, use the [get_pretrained_mlx_model.sh](get_pretrained_mlx_model.sh) script. The script downloads the model from the web and places it in the appropriate location. Once a model has been downloaded using the steps below, no additional steps are needed to build the app in Xcode.
 
-To explore how the other models work for your use-case, simply re-run the `get_pretrained_mlx_model.sh` with the new model selected, follow the prompts, and rebuild your app in Xcode.
+To explore how the other models work for your use-case, simply re-run the `get_pretrained_mlx_model.sh` with the new model selected, follow the prompts, and rebuild your app in Xcode. This step is optional as the app will now download the default model on its first launch.
 
-### Download Instructions
+### Model Download
 
-1. Make the script executable
-
-```shell
-chmod +x app/get_pretrained_mlx_model.sh
-```
-
-2. Download FastVLM
-
-```shell
-app/get_pretrained_mlx_model.sh --model 0.5b --dest app/FastVLM/model
-```
-
-3. Open the app in Xcode, Build, and Run.
+The FastVLM weights are no longer bundled with the project. On first launch the app shows a screen explaining that Apple’s FastVLM model (slightly above 1 GB) must be fetched once over the internet. After tapping **Download Model**, a progress bar tracks the download and the archive is cached in the application support directory so subsequent runs work fully offline.
 
 ### Custom Model
 
 In addition to pretrained sizes of FastVLM, you can further quantize or fine-tune FastVLM to best fit their needs. To learn more, check out our documentation on how to [`export the model`](../model_export#export-vlm).
-Please clear existing model in `app/FastVLM/model` before downloading or copying a new model. 
+If you download a different model size, delete the cached files in the application support directory before running the app again.
