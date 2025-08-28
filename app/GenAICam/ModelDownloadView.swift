@@ -2,7 +2,7 @@ import SwiftUI
 
 struct ModelDownloadView: View {
     @Binding var needsModelDownload: Bool
-    @State private var model = FastVLMModel()
+    @StateObject private var model = FastVLMModel()
     @State private var isDownloading = false
 
     var body: some View {
@@ -13,8 +13,10 @@ struct ModelDownloadView: View {
             if isDownloading {
                 ProgressView(value: model.downloadProgress, total: 1.0)
                     .padding()
+                Text(model.modelInfo)
+            } else {
+                Text(model.modelInfo)
             }
-            Text(model.modelInfo)
             Button("Download Model") {
                 isDownloading = true
                 Task {

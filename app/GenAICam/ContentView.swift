@@ -37,7 +37,7 @@ let longPromptSuffix = "Long and detailed description please."
 
 struct ContentView: View {
     @State private var camera = CameraController()
-    @State private var model = FastVLMModel()
+    @StateObject private var model = FastVLMModel()
 
     /// stream of frames -> VideoFrameView, see distributeVideoFrames
     @State private var framesToDisplay: AsyncStream<CVImageBuffer>?

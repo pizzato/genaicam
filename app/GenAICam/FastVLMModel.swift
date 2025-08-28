@@ -13,16 +13,16 @@ import MLXVLM
 #if canImport(ZIPFoundation)
 import ZIPFoundation
 #endif
+import Combine
 
-@Observable
 @MainActor
-class FastVLMModel {
+class FastVLMModel: ObservableObject {
 
-    public var running = false
-    public var modelInfo = ""
-    public var output = ""
-    public var promptTime: String = ""
-    public var downloadProgress: Double = 0.0
+    @Published public var running = false
+    @Published public var modelInfo = ""
+    @Published public var output = ""
+    @Published public var promptTime: String = ""
+    @Published public var downloadProgress: Double = 0.0
 
     enum LoadState {
         case idle
@@ -61,7 +61,7 @@ class FastVLMModel {
         case generatingResponse = "Generating Response"
     }
 
-    public var evaluationState = EvaluationState.idle
+    @Published public var evaluationState = EvaluationState.idle
 
     public init() {
         FastVLM.register(modelFactory: VLMModelFactory.shared)
