@@ -18,8 +18,12 @@ struct ModelDownloadView: View {
             Button("Download Model") {
                 isDownloading = true
                 Task {
-                    await model.download()
-                    needsModelDownload = false
+                    let success = await model.download()
+                    if success {
+                        needsModelDownload = false
+                    } else {
+                        isDownloading = false
+                    }
                 }
             }
             .disabled(isDownloading)

@@ -70,17 +70,25 @@ class FastVLMModel {
         return FileManager.default.fileExists(atPath: config.path)
     }
 
-    public func download() async {
+    /// Downloads the model archive if it is not already cached.
+    /// - Returns: `true` on success, `false` if an error occurred.
+    public func download() async -> Bool {
+        await MainActor.run {
+            self.downloadProgress = 0.0
+            self.modelInfo = "Preparing download..."
+        }
         do {
             try await ensureModelAvailable()
             await MainActor.run {
                 self.modelInfo = "Download complete"
                 self.downloadProgress = 1.0
             }
+            return true
         } catch {
             await MainActor.run {
-                self.modelInfo = "Error downloading model: \(error)"
+                self.modelInfo = "Error downloading model: \(error.localizedDescription)"
             }
+            return false
         }
     }
 
