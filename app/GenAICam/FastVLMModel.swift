@@ -170,7 +170,7 @@ class FastVLMModel: ObservableObject {
             self.modelInfo = "Extracting 0%"
         }
         print("[FastVLM] Extracting archive...")
-        try unzipItem(at: zipURL, to: tempDir) { progress in
+        try await unzipItem(at: zipURL, to: tempDir) { progress in
             print(String(format: "[FastVLM] Extraction progress: %.0f%%", progress * 100))
             Task { @MainActor in
                 withAnimation(.linear) {
@@ -200,22 +200,31 @@ class FastVLMModel: ObservableObject {
     }
 
     private func unzipItem(at sourceURL: URL, to destinationURL: URL,
-                           progressHandler: (Double) -> Void) throws {
+                           progressHandler: @escaping (Double) -> Void) async throws {
         #if canImport(ZIPFoundation)
-        let fileManager = FileManager.default
-        let archive = try Archive(url: sourceURL, accessMode: .read)
-        let entries = Array(archive)
-        let total = entries.count
-        for (index, entry) in entries.enumerated() {
-            let entryURL = destinationURL.appendingPathComponent(entry.path)
-            try fileManager.createDirectory(
-                at: entryURL.deletingLastPathComponent(),
-                withIntermediateDirectories: true
-            )
-            _ = try archive.extract(entry, to: entryURL)
-            progressHandler(Double(index + 1) / Double(total))
+        try await withCheckedThrowingContinuation { continuation in
+            DispatchQueue.global(qos: .userInitiated).async {
+                do {
+                    let fileManager = FileManager.default
+                    let archive = try Archive(url: sourceURL, accessMode: .read)
+                    let entries = Array(archive)
+                    let total = entries.count
+                    for (index, entry) in entries.enumerated() {
+                        let entryURL = destinationURL.appendingPathComponent(entry.path)
+                        try fileManager.createDirectory(
+                            at: entryURL.deletingLastPathComponent(),
+                            withIntermediateDirectories: true
+                        )
+                        _ = try archive.extract(entry, to: entryURL)
+                        progressHandler(Double(index + 1) / Double(total))
+                    }
+                    print("[FastVLM] Unzipped archive using ZIPFoundation")
+                    continuation.resume(returning: ())
+                } catch {
+                    continuation.resume(throwing: error)
+                }
+            }
         }
-        print("[FastVLM] Unzipped archive using ZIPFoundation")
         #else
         print("[FastVLM] ZIPFoundation not available for extraction")
         throw NSError(
