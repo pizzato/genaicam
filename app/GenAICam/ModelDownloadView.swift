@@ -11,10 +11,10 @@ struct ModelDownloadView: View {
                 .multilineTextAlignment(.center)
                 .padding()
             if isDownloading {
-                ProgressView(value: model.downloadProgress)
+                ProgressView(value: model.downloadProgress, total: 1.0)
                     .padding()
-                Text(model.modelInfo)
             }
+            Text(model.modelInfo)
             Button("Download Model") {
                 isDownloading = true
                 Task {

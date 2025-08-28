@@ -34,7 +34,10 @@ class FastVLMModel {
         return support.appendingPathComponent("FastVLM/model", isDirectory: true)
     }()
 
-    private let modelDownloadURL = URL(string: "https://ml-site.cdn-apple.com/datasets/fastvlm/llava-fastvithd_0.5b_stage3_llm.fp16.zip")!
+    private let modelIdentifier = "llava-fastvithd_0.5b_stage3_llm.fp16"
+    private var modelDownloadURL: URL {
+        URL(string: "https://ml-site.cdn-apple.com/datasets/fastvlm/\(modelIdentifier).zip")!
+    }
 
     private var modelConfiguration: ModelConfiguration {
         FastVLM.modelConfiguration
@@ -96,7 +99,9 @@ class FastVLMModel {
         let configURL = modelDirectory.appendingPathComponent("config.json")
         if FileManager.default.fileExists(atPath: configURL.path) { return }
 
-        try FileManager.default.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
+        let fm = FileManager.default
+        try fm.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
+
         final class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
             let progressHandler: (Double) -> Void
             init(progressHandler: @escaping (Double) -> Void) { self.progressHandler = progressHandler }
@@ -108,11 +113,6 @@ class FastVLMModel {
                 let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
                 progressHandler(progress)
             }
-
-            func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
-                            didFinishDownloadingTo location: URL) {
-                // no-op: URL provided via async API
-            }
         }
 
         let delegate = DownloadDelegate { progress in
@@ -121,9 +121,33 @@ class FastVLMModel {
                 self.modelInfo = "Downloading model: \(Int(progress * 100))%"
             }
         }
-        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
-        let (zipURL, _) = try await session.download(from: modelDownloadURL)
-        try unzipItem(at: zipURL, to: modelDirectory)
+
+        let session = URLSession(configuration: .default)
+
+        // Temporary workspace
+        let tempDir = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: tempDir) }
+
+        let (downloadedURL, _) = try await session.download(from: modelDownloadURL, delegate: delegate)
+        let zipURL = tempDir.appendingPathComponent("model.zip")
+        try fm.moveItem(at: downloadedURL, to: zipURL)
+
+        await MainActor.run {
+            self.modelInfo = "Extracting model..."
+        }
+        try unzipItem(at: zipURL, to: tempDir)
+
+        // Copy extracted contents (which reside under modelIdentifier) to modelDirectory
+        let extractedRoot = tempDir.appendingPathComponent(modelIdentifier, isDirectory: true)
+        let files = try fm.contentsOfDirectory(at: extractedRoot, includingPropertiesForKeys: nil)
+        for file in files {
+            let dest = modelDirectory.appendingPathComponent(file.lastPathComponent)
+            if fm.fileExists(atPath: dest.path) {
+                try fm.removeItem(at: dest)
+            }
+            try fm.moveItem(at: file, to: dest)
+        }
     }
 
     private func unzipItem(at sourceURL: URL, to destinationURL: URL) throws {
