@@ -80,14 +80,18 @@ class FastVLMModel {
             self.downloadProgress = 0.0
             self.modelInfo = "Preparing download..."
         }
+
+        print("[FastVLM] Starting model download from \(modelDownloadURL.absoluteString)")
         do {
             try await ensureModelAvailable()
             await MainActor.run {
                 self.modelInfo = "Download complete"
                 self.downloadProgress = 1.0
             }
+            print("[FastVLM] Model download and extraction finished")
             return true
         } catch {
+            print("[FastVLM] Model download failed: \(error.localizedDescription)")
             await MainActor.run {
                 self.modelInfo = "Error downloading model: \(error.localizedDescription)"
             }
@@ -121,6 +125,7 @@ class FastVLMModel {
         }
 
         let delegate = DownloadDelegate { progress in
+            print(String(format: "[FastVLM] Download progress: %.0f%%", progress * 100))
             Task { @MainActor in
                 self.downloadProgress = progress
                 self.modelInfo = "Downloading model: \(Int(progress * 100))%"
@@ -135,13 +140,16 @@ class FastVLMModel {
         defer { try? fm.removeItem(at: tempDir) }
 
         let (downloadedURL, _) = try await session.download(from: modelDownloadURL, delegate: delegate)
+        print("[FastVLM] Downloaded archive to \(downloadedURL.path)")
         let zipURL = tempDir.appendingPathComponent("model.zip")
         try fm.moveItem(at: downloadedURL, to: zipURL)
 
         await MainActor.run {
             self.modelInfo = "Extracting model..."
         }
+        print("[FastVLM] Extracting archive...")
         try unzipItem(at: zipURL, to: tempDir)
+        print("[FastVLM] Extraction complete")
 
         // Copy extracted contents (which reside under modelIdentifier) to modelDirectory
         let extractedRoot = tempDir.appendingPathComponent(modelIdentifier, isDirectory: true)
@@ -153,6 +161,7 @@ class FastVLMModel {
             }
             try fm.moveItem(at: file, to: dest)
         }
+        print("[FastVLM] Copied model files to cache at \(modelDirectory.path)")
     }
 
     private func unzipItem(at sourceURL: URL, to destinationURL: URL) throws {
@@ -167,7 +176,9 @@ class FastVLMModel {
             )
             _ = try archive.extract(entry, to: entryURL)
         }
+        print("[FastVLM] Unzipped archive using ZIPFoundation")
         #else
+        print("[FastVLM] ZIPFoundation not available for extraction")
         throw NSError(
             domain: "FastVLMModel",
             code: -1,

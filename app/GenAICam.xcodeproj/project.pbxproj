@@ -20,7 +20,8 @@
 		C3ED54582D790A68005E20B3 /* MLXFast in Frameworks */ = {isa = PBXBuildFile; productRef = C3ED54572D790A68005E20B3 /* MLXFast */; };
 		C3ED545B2D790AD6005E20B3 /* Transformers in Frameworks */ = {isa = PBXBuildFile; productRef = C3ED545A2D790AD6005E20B3 /* Transformers */; };
 		C3ED55012D7A0A7A005E20B3 /* FastVLM.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C39BB3E62D79082A005DB8FB /* FastVLM.framework */; };
-		C3ED55022D7A0A7A005E20B3 /* FastVLM.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C39BB3E62D79082A005DB8FB /* FastVLM.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+                C3ED55022D7A0A7A005E20B3 /* FastVLM.framework in Embed Frameworks */ = {isa = PBXBuildFile; fileRef = C39BB3E62D79082A005DB8FB /* FastVLM.framework */; settings = {ATTRIBUTES = (CodeSignOnCopy, RemoveHeadersOnCopy, ); }; };
+                C3F4ABCC2D8E0F50005E20B3 /* ZIPFoundation in Frameworks */ = {isa = PBXBuildFile; productRef = C3F4ABCB2D8E0F50005E20B3 /* ZIPFoundation */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -123,14 +124,15 @@
 		019A3E072D78E6A00055F93B /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
-			files = (
-				019A3E1C2D78E73E0055F93B /* MLXLMCommon in Frameworks */,
-				019A3E212D78E7530055F93B /* Video.framework in Frameworks */,
-				C3ED55012D7A0A7A005E20B3 /* FastVLM.framework in Frameworks */,
-				019A3E1E2D78E7470055F93B /* MLXRandom in Frameworks */,
-				019A3E202D78E74C0055F93B /* MLXVLM in Frameworks */,
-				019A3E1A2D78E7370055F93B /* MLX in Frameworks */,
-			);
+                        files = (
+                                019A3E1C2D78E73E0055F93B /* MLXLMCommon in Frameworks */,
+                                019A3E212D78E7530055F93B /* Video.framework in Frameworks */,
+                                C3ED55012D7A0A7A005E20B3 /* FastVLM.framework in Frameworks */,
+                                019A3E1E2D78E7470055F93B /* MLXRandom in Frameworks */,
+                                019A3E202D78E74C0055F93B /* MLXVLM in Frameworks */,
+                                019A3E1A2D78E7370055F93B /* MLX in Frameworks */,
+                                C3F4ABCC2D8E0F50005E20B3 /* ZIPFoundation in Frameworks */,
+                        );
 			runOnlyForDeploymentPostprocessing = 0;
 		};
 		C35372AB2D08C32D00474D34 /* Frameworks */ = {
@@ -226,12 +228,13 @@
 				019A3E0B2D78E6A00055F93B /* GenAICam */,
 			);
 			name = GenAICam;
-			packageProductDependencies = (
-				019A3E192D78E7370055F93B /* MLX */,
-				019A3E1B2D78E73E0055F93B /* MLXLMCommon */,
-				019A3E1D2D78E7470055F93B /* MLXRandom */,
-				019A3E1F2D78E74C0055F93B /* MLXVLM */,
-			);
+                        packageProductDependencies = (
+                                019A3E192D78E7370055F93B /* MLX */,
+                                019A3E1B2D78E73E0055F93B /* MLXLMCommon */,
+                                019A3E1D2D78E7470055F93B /* MLXRandom */,
+                                019A3E1F2D78E74C0055F93B /* MLXVLM */,
+                                C3F4ABCB2D8E0F50005E20B3 /* ZIPFoundation */,
+                        );
 			productName = GenAICam;
 			productReference = 019A3E0A2D78E6A00055F93B /* GenAICam.app */;
 			productType = "com.apple.product-type.application";
@@ -319,11 +322,12 @@
 			);
 			mainGroup = C35EDB632D07699400757E80;
 			minimizedProjectReferenceProxies = 1;
-			packageReferences = (
-				C35EDB6A2D076A3900757E80 /* XCRemoteSwiftPackageReference "mlx-swift-examples" */,
-				C35EDB8A2D07777E00757E80 /* XCRemoteSwiftPackageReference "mlx-swift" */,
-				C3ED54592D790AC6005E20B3 /* XCRemoteSwiftPackageReference "swift-transformers" */,
-			);
+                        packageReferences = (
+                                C35EDB6A2D076A3900757E80 /* XCRemoteSwiftPackageReference "mlx-swift-examples" */,
+                                C35EDB8A2D07777E00757E80 /* XCRemoteSwiftPackageReference "mlx-swift" */,
+                                C3ED54592D790AC6005E20B3 /* XCRemoteSwiftPackageReference "swift-transformers" */,
+                                C3F4ABCA2D8E0F50005E20B3 /* XCRemoteSwiftPackageReference "ZIPFoundation" */,
+                        );
 			preferredProjectObjectVersion = 77;
 			productRefGroup = C35EDB702D076A5A00757E80 /* Products */;
 			projectDirPath = "";
@@ -1124,14 +1128,22 @@
 				minimumVersion = 0.21.2;
 			};
 		};
-		C3ED54592D790AC6005E20B3 /* XCRemoteSwiftPackageReference "swift-transformers" */ = {
-			isa = XCRemoteSwiftPackageReference;
-			repositoryURL = "https://github.com/huggingface/swift-transformers";
-			requirement = {
-				kind = upToNextMajorVersion;
-				minimumVersion = 0.1.18;
-			};
-		};
+                C3ED54592D790AC6005E20B3 /* XCRemoteSwiftPackageReference "swift-transformers" */ = {
+                        isa = XCRemoteSwiftPackageReference;
+                        repositoryURL = "https://github.com/huggingface/swift-transformers";
+                        requirement = {
+                                kind = upToNextMajorVersion;
+                                minimumVersion = 0.1.18;
+                        };
+                };
+                C3F4ABCA2D8E0F50005E20B3 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
+                        isa = XCRemoteSwiftPackageReference;
+                        repositoryURL = "https://github.com/weichsel/ZIPFoundation.git";
+                        requirement = {
+                                kind = upToNextMajorVersion;
+                                minimumVersion = 0.9.19;
+                        };
+                };
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
@@ -1180,11 +1192,16 @@
 			package = C35EDB8A2D07777E00757E80 /* XCRemoteSwiftPackageReference "mlx-swift" */;
 			productName = MLXFast;
 		};
-		C3ED545A2D790AD6005E20B3 /* Transformers */ = {
-			isa = XCSwiftPackageProductDependency;
-			package = C3ED54592D790AC6005E20B3 /* XCRemoteSwiftPackageReference "swift-transformers" */;
-			productName = Transformers;
-		};
+                C3ED545A2D790AD6005E20B3 /* Transformers */ = {
+                        isa = XCSwiftPackageProductDependency;
+                        package = C3ED54592D790AC6005E20B3 /* XCRemoteSwiftPackageReference "swift-transformers" */;
+                        productName = Transformers;
+                };
+                C3F4ABCB2D8E0F50005E20B3 /* ZIPFoundation */ = {
+                        isa = XCSwiftPackageProductDependency;
+                        package = C3F4ABCA2D8E0F50005E20B3 /* XCRemoteSwiftPackageReference "ZIPFoundation" */;
+                        productName = ZIPFoundation;
+                };
 /* End XCSwiftPackageProductDependency section */
 	};
 	rootObject = C35EDB642D07699400757E80 /* Project object */;
