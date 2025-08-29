@@ -33,7 +33,7 @@ struct WelcomeView: View {
     @Environment(\.dismiss) private var dismiss
 
     private var appName: String {
-        Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "FastVLM"
+        Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "GenAICam"
     }
 
     private var appVersion: String {
