@@ -7,7 +7,7 @@ struct ModelDownloadView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("On first run, we need to download Apple's FastVLM model, this is the only time the internet has to be accessed. The model is slightly above 1GB, make sure you use WiFi")
+            Text("On this first run, press Download to get Apple’s FastVLM model (~1.1 GB). This one-time setup enables offline image descriptions and is the only time the app needs internet. Please use Wi-Fi.")
                 .multilineTextAlignment(.center)
                 .padding()
             if isDownloading {
