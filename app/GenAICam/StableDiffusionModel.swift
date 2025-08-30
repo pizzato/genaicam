@@ -5,6 +5,9 @@
 
 import Foundation
 import SwiftUI
+#if canImport(ZIPFoundation)
+import ZIPFoundation
+#endif
 
 @MainActor
 class StableDiffusionModel: ObservableObject {
@@ -131,24 +134,51 @@ class StableDiffusionModel: ObservableObject {
 
     private func unzipItem(at sourceURL: URL, to destinationURL: URL,
                            progressHandler: @escaping (Double) -> Void) async throws {
-        if #available(iOS 16.0, macOS 13.0, *) {
-            // Use the system's unzip implementation which supports modern compression methods
+        #if canImport(ZIPFoundation)
+        do {
             try await withCheckedThrowingContinuation { continuation in
                 DispatchQueue.global(qos: .userInitiated).async {
                     do {
-                        try FileManager.default.unzipItem(at: sourceURL, to: destinationURL)
-                        progressHandler(1.0)
-                        print("[StableDiffusion] Unzipped archive using FileManager")
+                        let fileManager = FileManager.default
+                        let archive = try Archive(url: sourceURL, accessMode: .read)
+                        let entries = Array(archive)
+                        let total = entries.count
+                        for (index, entry) in entries.enumerated() {
+                            let entryURL = destinationURL.appendingPathComponent(entry.path)
+                            try fileManager.createDirectory(
+                                at: entryURL.deletingLastPathComponent(),
+                                withIntermediateDirectories: true
+                            )
+                            _ = try archive.extract(entry, to: entryURL)
+                            progressHandler(Double(index + 1) / Double(total))
+                        }
+                        print("[StableDiffusion] Unzipped archive using ZIPFoundation")
                         continuation.resume(returning: ())
                     } catch {
                         continuation.resume(throwing: error)
                     }
                 }
             }
+        } catch {
+            print("[StableDiffusion] ZIPFoundation unzip failed: \(error.localizedDescription). Falling back to FileManager unzip")
+            if #available(iOS 16.0, macOS 13.0, *) {
+                try FileManager.default.unzipItem(at: sourceURL, to: destinationURL)
+                progressHandler(1.0)
+                print("[StableDiffusion] Unzipped archive using FileManager")
+            } else {
+                throw error
+            }
+        }
+        #else
+        if #available(iOS 16.0, macOS 13.0, *) {
+            try FileManager.default.unzipItem(at: sourceURL, to: destinationURL)
+            progressHandler(1.0)
+            print("[StableDiffusion] Unzipped archive using FileManager")
         } else {
             throw NSError(domain: "StableDiffusionModel", code: -1,
-                          userInfo: [NSLocalizedDescriptionKey: "Extraction requires iOS 16 or later"])
+                          userInfo: [NSLocalizedDescriptionKey: "ZIPFoundation not available"])
         }
+        #endif
     }
 }
 
