@@ -107,7 +107,10 @@ class StableDiffusionImageGenerator {
         do {
             if pipeline == nil {
                 let resources = StableDiffusionModel.modelDirectory
-                pipeline = try StableDiffusionPipeline(resourcesAt: resources, configuration: MLModelConfiguration())
+                let config = MLModelConfiguration()
+                config.computeUnits = .all
+                pipeline = try StableDiffusionPipeline(resourcesAt: resources, configuration: config)
+                print("[StableDiffusion] Loaded pipeline from \(resources.path)")
             }
             guard let pipeline else { return nil }
             let stepCount = 20
