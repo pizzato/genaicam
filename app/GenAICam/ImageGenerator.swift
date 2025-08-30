@@ -5,7 +5,7 @@
 
 import Foundation
 import CoreML
-#if canImport(StableDiffusion)
+#if canImport(StableDiffusion) && os(iOS)
 import StableDiffusion
 #endif
 #if os(iOS)
@@ -90,8 +90,9 @@ class PlaygroundImageGenerator {
 }
 #endif
 
-#if canImport(StableDiffusion)
+#if canImport(StableDiffusion) && os(iOS)
 /// Wrapper around the Core ML Stable Diffusion pipeline.
+@available(iOS 16.2, macOS 13.1, *)
 class StableDiffusionImageGenerator {
     private var pipeline: StableDiffusionPipeline?
 
