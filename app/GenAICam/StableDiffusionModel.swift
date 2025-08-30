@@ -14,8 +14,6 @@ class StableDiffusionModel: ObservableObject {
     @Published var modelInfo: String = ""
     @Published var downloadProgress: Double? = nil
 
-    static let modelIdentifier = "coreml-stable-diffusion-2-1-base-palettized"
-
     static var modelDirectory: URL = {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return support.appendingPathComponent("StableDiffusion/model", isDirectory: true)
@@ -27,7 +25,8 @@ class StableDiffusionModel: ObservableObject {
     }
 
     private var modelDownloadURL: URL {
-        URL(string: "https://huggingface.co/apple/coreml-stable-diffusion-2-1-base-palettized/resolve/main/\(Self.modelIdentifier).zip")!
+        // Use the NE-optimized split_einsum_v2 variant of the palettized model
+        URL(string: "https://huggingface.co/apple/coreml-stable-diffusion-2-1-base-palettized/resolve/main/coreml-stable-diffusion-2-1-base-palettized_split_einsum_v2_compiled.zip")!
     }
 
     func download() async -> Bool {
@@ -120,7 +119,11 @@ class StableDiffusionModel: ObservableObject {
             self.downloadProgress = nil
         }
 
-        let extractedRoot = tempDir.appendingPathComponent(Self.modelIdentifier, isDirectory: true)
+        // Determine the top-level directory produced by the archive
+        let extractedItems = try fm.contentsOfDirectory(at: tempDir, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])
+        guard let extractedRoot = extractedItems.first(where: { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }) else {
+            throw NSError(domain: "StableDiffusionModel", code: -2, userInfo: [NSLocalizedDescriptionKey: "Invalid archive structure"])
+        }
         let files = try fm.contentsOfDirectory(at: extractedRoot, includingPropertiesForKeys: nil)
         for file in files {
             let dest = Self.modelDirectory.appendingPathComponent(file.lastPathComponent)
