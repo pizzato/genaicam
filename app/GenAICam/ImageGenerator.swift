@@ -11,6 +11,9 @@ import UIKit
 #if canImport(ImagePlayground)
 import ImagePlayground
 #endif
+#if canImport(StableDiffusion)
+import StableDiffusion
+#endif
 
 /// Style options for Image Playground generation.
 enum PlaygroundStyle: String, CaseIterable, Identifiable {
@@ -88,7 +91,6 @@ class PlaygroundImageGenerator {
 #endif
 
 #if canImport(StableDiffusion) && canImport(UIKit)
-import StableDiffusion
 /// Wrapper around the Core ML Stable Diffusion pipeline.
 @available(iOS 16.2, macOS 13.1, *)
 class StableDiffusionImageGenerator {
