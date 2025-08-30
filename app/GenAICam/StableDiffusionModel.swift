@@ -36,14 +36,17 @@ class StableDiffusionModel: ObservableObject {
             self.modelInfo = "Downloading..."
         }
 
+        print("[StableDiffusion] Starting model download from \(modelDownloadURL.absoluteString)")
         do {
             try await ensureModelAvailable()
             await MainActor.run {
                 self.modelInfo = "Download complete"
                 self.downloadProgress = 1.0
             }
+            print("[StableDiffusion] Model download and extraction finished")
             return true
         } catch {
+            print("[StableDiffusion] Model download failed: \(error.localizedDescription)")
             await MainActor.run { self.modelInfo = "Error: \(error.localizedDescription)" }
             return false
         }
@@ -93,6 +96,7 @@ class StableDiffusionModel: ObservableObject {
         defer { try? fm.removeItem(at: tempDir) }
 
         let (downloadedURL, _) = try await session.download(from: modelDownloadURL, delegate: delegate)
+        print("[StableDiffusion] Downloaded archive to \(downloadedURL.path)")
         let zipURL = tempDir.appendingPathComponent("model.zip")
         try fm.moveItem(at: downloadedURL, to: zipURL)
 
@@ -100,13 +104,16 @@ class StableDiffusionModel: ObservableObject {
             self.modelInfo = "Extracting 0%"
             self.downloadProgress = 0
         }
+        print("[StableDiffusion] Extracting archive...")
 
         try await unzipItem(at: zipURL, to: tempDir) { progress in
+            print(String(format: "[StableDiffusion] Extraction progress: %.0f%%", progress * 100))
             Task { @MainActor in
                 self.modelInfo = "Extracting \(Int(progress * 100))%"
                 self.downloadProgress = progress
             }
         }
+        print("[StableDiffusion] Extraction complete")
 
         await MainActor.run {
             self.modelInfo = "Finalizing..."
@@ -122,33 +129,52 @@ class StableDiffusionModel: ObservableObject {
             }
             try fm.moveItem(at: file, to: dest)
         }
+        print("[StableDiffusion] Copied model files to cache at \(Self.modelDirectory.path)")
     }
 
     private func unzipItem(at sourceURL: URL, to destinationURL: URL,
                            progressHandler: @escaping (Double) -> Void) async throws {
         #if canImport(ZIPFoundation)
-        try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    let fileManager = FileManager.default
-                    let archive = try Archive(url: sourceURL, accessMode: .read)
-                    let entries = Array(archive)
-                    let total = entries.count
-                    for (index, entry) in entries.enumerated() {
-                        let entryURL = destinationURL.appendingPathComponent(entry.path)
-                        try fileManager.createDirectory(at: entryURL.deletingLastPathComponent(), withIntermediateDirectories: true)
-                        _ = try archive.extract(entry, to: entryURL)
-                        progressHandler(Double(index + 1) / Double(total))
+        do {
+            try await withCheckedThrowingContinuation { continuation in
+                DispatchQueue.global(qos: .userInitiated).async {
+                    do {
+                        let fileManager = FileManager.default
+                        let archive = try Archive(url: sourceURL, accessMode: .read)
+                        let entries = Array(archive)
+                        let total = entries.count
+                        for (index, entry) in entries.enumerated() {
+                            let entryURL = destinationURL.appendingPathComponent(entry.path)
+                            try fileManager.createDirectory(at: entryURL.deletingLastPathComponent(), withIntermediateDirectories: true)
+                            _ = try archive.extract(entry, to: entryURL)
+                            progressHandler(Double(index + 1) / Double(total))
+                        }
+                        print("[StableDiffusion] Unzipped archive using ZIPFoundation")
+                        continuation.resume(returning: ())
+                    } catch {
+                        continuation.resume(throwing: error)
                     }
-                    continuation.resume(returning: ())
-                } catch {
-                    continuation.resume(throwing: error)
                 }
+            }
+        } catch {
+            print("[StableDiffusion] ZIPFoundation unzip failed: \(error.localizedDescription). Falling back to FileManager unzip")
+            if #available(iOS 16.0, macOS 13.0, *) {
+                try FileManager.default.unzipItem(at: sourceURL, to: destinationURL)
+                progressHandler(1.0)
+                print("[StableDiffusion] Unzipped archive using FileManager")
+            } else {
+                throw error
             }
         }
         #else
-        throw NSError(domain: "StableDiffusionModel", code: -1,
-                      userInfo: [NSLocalizedDescriptionKey: "ZIPFoundation not available"])
+        if #available(iOS 16.0, macOS 13.0, *) {
+            try FileManager.default.unzipItem(at: sourceURL, to: destinationURL)
+            progressHandler(1.0)
+            print("[StableDiffusion] Unzipped archive using FileManager")
+        } else {
+            throw NSError(domain: "StableDiffusionModel", code: -1,
+                          userInfo: [NSLocalizedDescriptionKey: "ZIPFoundation not available"])
+        }
         #endif
     }
 }
