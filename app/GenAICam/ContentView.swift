@@ -60,6 +60,8 @@ struct ContentView: View {
     @State private var generatedImage: UIImage?
 #endif
     @State private var sdGenerator = StableDiffusionImageGenerator()
+    @State private var sdStep: Int = 0
+    @State private var sdStepCount: Int = 0
 #if os(iOS) && canImport(ImagePlayground)
     @available(iOS 18.0, *)
     @State private var imageGenerator = PlaygroundImageGenerator()
@@ -143,7 +145,12 @@ struct ContentView: View {
 #endif
                                     } else {
                                         let prompt = shortDescription
-                                        generatedImage = await sdGenerator.generate(prompt: prompt)
+                                        sdStep = 0
+                                        sdStepCount = 20
+                                        generatedImage = await sdGenerator.generate(prompt: prompt) { step, total in
+                                            sdStep = step + 1
+                                            sdStepCount = total
+                                        }
                                     }
                                 }
                                 showPreview = true
@@ -202,6 +209,8 @@ struct ContentView: View {
                             shortDescription: shortDescription,
                             longDescription: longDescription,
                             generationMode: generationMode,
+                            sdStep: $sdStep,
+                            sdStepCount: $sdStepCount,
                             onRetake: {
                                 showPreview = false
                                 model.output = ""
@@ -373,14 +382,24 @@ struct ContentView: View {
             Task {
                 generatedImage = nil
                 let prompt = shortDescription
-                generatedImage = await sdGenerator.generate(prompt: prompt)
+                sdStep = 0
+                sdStepCount = 20
+                generatedImage = await sdGenerator.generate(prompt: prompt) { step, total in
+                    sdStep = step + 1
+                    sdStepCount = total
+                }
             }
         }
 #else
         Task {
             generatedImage = nil
             let prompt = shortDescription
-            generatedImage = await sdGenerator.generate(prompt: prompt)
+            sdStep = 0
+            sdStepCount = 20
+            generatedImage = await sdGenerator.generate(prompt: prompt) { step, total in
+                sdStep = step + 1
+                sdStepCount = total
+            }
         }
 #endif
     }

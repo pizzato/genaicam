@@ -98,16 +98,25 @@ class StableDiffusionImageGenerator {
     init() {}
 
     /// Generate an image from a prompt using the Stable Diffusion pipeline.
-    /// - Parameter prompt: The text prompt describing the desired image.
+    /// - Parameters:
+    ///   - prompt: The text prompt describing the desired image.
+    ///   - progressHandler: Closure called on each step with the current step and total steps.
     /// - Returns: Generated image or `nil` if generation fails.
-    func generate(prompt: String) async -> UIImage? {
+    func generate(prompt: String,
+                  progressHandler: @escaping @MainActor (Int, Int) -> Void) async -> UIImage? {
         do {
             if pipeline == nil {
                 let resources = StableDiffusionModel.modelDirectory
                 pipeline = try StableDiffusionPipeline(resourcesAt: resources, configuration: MLModelConfiguration())
             }
             guard let pipeline else { return nil }
-            let images = try await pipeline.generate(prompt: prompt, stepCount: 20)
+            let stepCount = 20
+            let images = try await pipeline.generate(prompt: prompt, stepCount: stepCount) { progress in
+                Task { @MainActor in
+                    progressHandler(progress.step, progress.stepCount)
+                }
+                return true
+            }
             if let cgImage = images.first {
                 return UIImage(cgImage: cgImage)
             }
@@ -121,7 +130,8 @@ class StableDiffusionImageGenerator {
 @MainActor
 class StableDiffusionImageGenerator {
     init() {}
-    func generate(prompt: String) async -> UIImage? { nil }
+    func generate(prompt: String,
+                  progressHandler: @escaping @MainActor (Int, Int) -> Void) async -> UIImage? { nil }
 }
 #endif
 

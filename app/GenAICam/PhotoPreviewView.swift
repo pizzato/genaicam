@@ -15,6 +15,8 @@ struct PhotoPreviewView: View {
     let shortDescription: String
     let longDescription: String
     let generationMode: ImageGenerationMode
+    @Binding var sdStep: Int
+    @Binding var sdStepCount: Int
     var onRetake: () -> Void
     var onRecreate: (PlaygroundStyle?) -> Void
 
@@ -138,6 +140,11 @@ struct PhotoPreviewView: View {
                             Text(generationMode == .stableDiffusion ? "Generating with Stable Diffusion…" : "Generating image…")
                                 .font(.headline)
                                 .foregroundColor(.white)
+                            if generationMode == .stableDiffusion && sdStepCount > 0 {
+                                Text("Step \(max(sdStep, 1)) of \(sdStepCount)")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                            }
                             if !description.isEmpty {
                                 Text(description)
                                     .font(.subheadline)
