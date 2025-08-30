@@ -11,6 +11,7 @@ struct SettingsView: View {
     @Binding var mode: DescriptionMode
     @Binding var isRealTime: Bool
     @Binding var showDescription: Bool
+    @Binding var generator: ImageGenerationMode
     @State private var showWelcome = false
     
     private var appName: String {
@@ -35,10 +36,26 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                 }
 
-                Section("Image Style") {
-                    Picker("Style", selection: $style) {
-                        ForEach(PlaygroundStyle.allCases) { option in
-                            Text(option.rawValue.capitalized).tag(option)
+                Section("Image Generator") {
+                    Picker("Generator", selection: $generator) {
+                        ForEach(ImageGenerationMode.allCases) { option in
+                            switch option {
+                            case .playground:
+                                Text("Image Playground").tag(option)
+                            case .stableDiffusion:
+                                Text("Stable Diffusion").tag(option)
+                            }
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                if generator == .playground {
+                    Section("Image Style") {
+                        Picker("Style", selection: $style) {
+                            ForEach(PlaygroundStyle.allCases) { option in
+                                Text(option.rawValue.capitalized).tag(option)
+                            }
                         }
                     }
                 }
@@ -60,5 +77,5 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView(style: .constant(.sketch), mode: .constant(.short), isRealTime: .constant(false), showDescription: .constant(false))
+    SettingsView(style: .constant(.sketch), mode: .constant(.short), isRealTime: .constant(false), showDescription: .constant(false), generator: .constant(.playground))
 }

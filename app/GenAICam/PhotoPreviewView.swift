@@ -14,6 +14,7 @@ struct PhotoPreviewView: View {
     @Binding var description: String
     let shortDescription: String
     let longDescription: String
+    let generationMode: ImageGenerationMode
     var onRetake: () -> Void
     var onRecreate: (PlaygroundStyle?) -> Void
 
@@ -94,9 +95,11 @@ struct PhotoPreviewView: View {
                             )
                         }
                         .contextMenu {
-                            ForEach(PlaygroundStyle.allCases) { option in
-                                Button(option.rawValue.capitalized) {
-                                    onRecreate(option)
+                            if generationMode == .playground {
+                                ForEach(PlaygroundStyle.allCases) { option in
+                                    Button(option.rawValue.capitalized) {
+                                        onRecreate(option)
+                                    }
                                 }
                             }
                         }

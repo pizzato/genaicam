@@ -9,12 +9,22 @@ import UIKit
 #if canImport(ImagePlayground)
 import ImagePlayground
 #endif
+#if canImport(StableDiffusion)
+import StableDiffusion
+#endif
 
 /// Style options for Image Playground generation.
 enum PlaygroundStyle: String, CaseIterable, Identifiable {
     case sketch
     case illustration
     case animation
+    var id: String { rawValue }
+}
+
+/// Available image generation engines.
+enum ImageGenerationMode: String, CaseIterable, Identifiable {
+    case playground
+    case stableDiffusion
     var id: String { rawValue }
 }
 
@@ -78,3 +88,40 @@ class PlaygroundImageGenerator {
 }
 #endif
 #endif
+
+#if canImport(StableDiffusion)
+/// Wrapper around the Core ML Stable Diffusion pipeline.
+@MainActor
+class StableDiffusionImageGenerator {
+    private var pipeline: StableDiffusionPipeline?
+
+    init() {}
+
+    /// Generate an image from a prompt using the Stable Diffusion pipeline.
+    /// - Parameter prompt: The text prompt describing the desired image.
+    /// - Returns: Generated image or `nil` if generation fails.
+    func generate(prompt: String) async -> UIImage? {
+        do {
+            if pipeline == nil {
+                let resources = StableDiffusionModel.modelDirectory
+                pipeline = try StableDiffusionPipeline(resourcesAt: resources, configuration: MLModelConfiguration())
+            }
+            guard let pipeline else { return nil }
+            let images = try await pipeline.generate(prompt: prompt, stepCount: 20)
+            if let cgImage = images.first {
+                return UIImage(cgImage: cgImage)
+            }
+        } catch {
+            return nil
+        }
+        return nil
+    }
+}
+#else
+@MainActor
+class StableDiffusionImageGenerator {
+    init() {}
+    func generate(prompt: String) async -> UIImage? { nil }
+}
+#endif
+
