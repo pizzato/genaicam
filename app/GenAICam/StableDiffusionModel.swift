@@ -68,6 +68,11 @@ class StableDiffusionModel: ObservableObject {
                     progressHandler(nil)
                 }
             }
+
+            // Required by URLSessionDownloadDelegate but unused since the async
+            // download method returns the temporary file URL directly.
+            func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
+                            didFinishDownloadingTo location: URL) {}
         }
 
         let delegate = DownloadDelegate { progress in
