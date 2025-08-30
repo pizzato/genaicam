@@ -14,7 +14,7 @@ class StableDiffusionModel: ObservableObject {
     @Published var modelInfo: String = ""
     @Published var downloadProgress: Double? = nil
 
-    static var modelDirectory: URL = {
+    nonisolated static var modelDirectory: URL = {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return support.appendingPathComponent("StableDiffusion/model", isDirectory: true)
     }()
