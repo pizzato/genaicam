@@ -131,8 +131,11 @@ struct PhotoPreviewView: View {
                     Spacer()
 
                     if generatedImage == nil {
-                        VStack {
-                            Text("Generating image")
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                                .tint(.white)
+                            Text(generationMode == .stableDiffusion ? "Generating with Stable Diffusion…" : "Generating image…")
                                 .font(.headline)
                                 .foregroundColor(.white)
                             if !description.isEmpty {

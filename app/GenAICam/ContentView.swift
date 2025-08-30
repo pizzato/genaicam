@@ -66,7 +66,7 @@ struct ContentView: View {
     @available(iOS 18.0, *)
     @AppStorage("playgroundStyle") private var playgroundStyle: PlaygroundStyle = .sketch
 #endif
-    @AppStorage("generationMode") private var generationMode: ImageGenerationMode = .playground
+    @AppStorage("generationMode") private var generationMode: ImageGenerationMode = .stableDiffusion
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
     @State private var showWelcome: Bool = false
     @State private var previousOutput: String = ""

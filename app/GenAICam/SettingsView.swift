@@ -77,5 +77,5 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView(style: .constant(.sketch), mode: .constant(.short), isRealTime: .constant(false), showDescription: .constant(false), generator: .constant(.playground))
+    SettingsView(style: .constant(.sketch), mode: .constant(.short), isRealTime: .constant(false), showDescription: .constant(false), generator: .constant(.stableDiffusion))
 }
