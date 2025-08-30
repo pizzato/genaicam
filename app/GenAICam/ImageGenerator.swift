@@ -5,9 +5,6 @@
 
 import Foundation
 import CoreML
-#if canImport(StableDiffusion)
-import StableDiffusion
-#endif
 #if canImport(UIKit)
 import UIKit
 #endif
@@ -91,6 +88,7 @@ class PlaygroundImageGenerator {
 #endif
 
 #if canImport(StableDiffusion) && canImport(UIKit)
+import StableDiffusion
 /// Wrapper around the Core ML Stable Diffusion pipeline.
 @available(iOS 16.2, macOS 13.1, *)
 class StableDiffusionImageGenerator {
@@ -111,7 +109,9 @@ class StableDiffusionImageGenerator {
                 let resources = StableDiffusionModel.modelDirectory
                 let config = MLModelConfiguration()
                 config.computeUnits = .all
-                pipeline = try StableDiffusionPipeline(resourcesAt: resources, configuration: config)
+                pipeline = try StableDiffusionPipeline(resourcesAt: resources,
+                                                    controlNet: [],
+                                                    configuration: config)
                 print("[StableDiffusion] Loaded pipeline from \(resources.path)")
             }
             guard let pipeline else { return nil }
