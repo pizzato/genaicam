@@ -14,6 +14,9 @@ struct PhotoPreviewView: View {
     @Binding var description: String
     let shortDescription: String
     let longDescription: String
+    let generationMode: ImageGenerationMode
+    @Binding var sdStep: Int
+    @Binding var sdStepCount: Int
     var onRetake: () -> Void
     var onRecreate: (PlaygroundStyle?) -> Void
 
@@ -94,9 +97,11 @@ struct PhotoPreviewView: View {
                             )
                         }
                         .contextMenu {
-                            ForEach(PlaygroundStyle.allCases) { option in
-                                Button(option.rawValue.capitalized) {
-                                    onRecreate(option)
+                            if generationMode == .playground {
+                                ForEach(PlaygroundStyle.allCases) { option in
+                                    Button(option.rawValue.capitalized) {
+                                        onRecreate(option)
+                                    }
                                 }
                             }
                         }
@@ -128,10 +133,18 @@ struct PhotoPreviewView: View {
                     Spacer()
 
                     if generatedImage == nil {
-                        VStack {
-                            Text("Generating image")
+                        VStack(spacing: 12) {
+                            ProgressView()
+                                .progressViewStyle(.circular)
+                                .tint(.white)
+                            Text(generationMode == .stableDiffusion ? "Generating with Stable Diffusion…" : "Generating image…")
                                 .font(.headline)
                                 .foregroundColor(.white)
+                            if generationMode == .stableDiffusion && sdStepCount > 0 {
+                                Text("Step \(max(sdStep, 1)) of \(sdStepCount)")
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                            }
                             if !description.isEmpty {
                                 Text(description)
                                     .font(.subheadline)

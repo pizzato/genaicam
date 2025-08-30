@@ -202,36 +202,53 @@ class FastVLMModel: ObservableObject {
     private func unzipItem(at sourceURL: URL, to destinationURL: URL,
                            progressHandler: @escaping (Double) -> Void) async throws {
         #if canImport(ZIPFoundation)
-        try await withCheckedThrowingContinuation { continuation in
-            DispatchQueue.global(qos: .userInitiated).async {
-                do {
-                    let fileManager = FileManager.default
-                    let archive = try Archive(url: sourceURL, accessMode: .read)
-                    let entries = Array(archive)
-                    let total = entries.count
-                    for (index, entry) in entries.enumerated() {
-                        let entryURL = destinationURL.appendingPathComponent(entry.path)
-                        try fileManager.createDirectory(
-                            at: entryURL.deletingLastPathComponent(),
-                            withIntermediateDirectories: true
-                        )
-                        _ = try archive.extract(entry, to: entryURL)
-                        progressHandler(Double(index + 1) / Double(total))
+        do {
+            try await withCheckedThrowingContinuation { continuation in
+                DispatchQueue.global(qos: .userInitiated).async {
+                    do {
+                        let fileManager = FileManager.default
+                        let archive = try Archive(url: sourceURL, accessMode: .read)
+                        let entries = Array(archive)
+                        let total = entries.count
+                        for (index, entry) in entries.enumerated() {
+                            let entryURL = destinationURL.appendingPathComponent(entry.path)
+                            try fileManager.createDirectory(
+                                at: entryURL.deletingLastPathComponent(),
+                                withIntermediateDirectories: true
+                            )
+                            _ = try archive.extract(entry, to: entryURL)
+                            progressHandler(Double(index + 1) / Double(total))
+                        }
+                        print("[FastVLM] Unzipped archive using ZIPFoundation")
+                        continuation.resume(returning: ())
+                    } catch {
+                        continuation.resume(throwing: error)
                     }
-                    print("[FastVLM] Unzipped archive using ZIPFoundation")
-                    continuation.resume(returning: ())
-                } catch {
-                    continuation.resume(throwing: error)
                 }
+            }
+        } catch {
+            print("[FastVLM] ZIPFoundation unzip failed: \(error.localizedDescription). Falling back to FileManager unzip")
+            if #available(iOS 16.0, macOS 13.0, *) {
+                try FileManager.default.unzipItem(at: sourceURL, to: destinationURL)
+                progressHandler(1.0)
+                print("[FastVLM] Unzipped archive using FileManager")
+            } else {
+                throw error
             }
         }
         #else
-        print("[FastVLM] ZIPFoundation not available for extraction")
-        throw NSError(
-            domain: "FastVLMModel",
-            code: -1,
-            userInfo: [NSLocalizedDescriptionKey: "ZIPFoundation not available"]
-        )
+        if #available(iOS 16.0, macOS 13.0, *) {
+            try FileManager.default.unzipItem(at: sourceURL, to: destinationURL)
+            progressHandler(1.0)
+            print("[FastVLM] Unzipped archive using FileManager")
+        } else {
+            print("[FastVLM] ZIPFoundation not available for extraction")
+            throw NSError(
+                domain: "FastVLMModel",
+                code: -1,
+                userInfo: [NSLocalizedDescriptionKey: "ZIPFoundation not available"]
+            )
+        }
         #endif
     }
 
