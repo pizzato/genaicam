@@ -91,7 +91,6 @@ class PlaygroundImageGenerator {
 
 #if canImport(StableDiffusion)
 /// Wrapper around the Core ML Stable Diffusion pipeline.
-@MainActor
 class StableDiffusionImageGenerator {
     private var pipeline: StableDiffusionPipeline?
 
@@ -104,6 +103,7 @@ class StableDiffusionImageGenerator {
     /// - Returns: Generated image or `nil` if generation fails.
     func generate(prompt: String,
                   progressHandler: @escaping @MainActor (Int, Int) -> Void) async -> UIImage? {
+        print("[StableDiffusion] Starting generation for prompt: \(prompt)")
         do {
             if pipeline == nil {
                 let resources = StableDiffusionModel.modelDirectory
@@ -112,22 +112,26 @@ class StableDiffusionImageGenerator {
             guard let pipeline else { return nil }
             let stepCount = 20
             let images = try await pipeline.generate(prompt: prompt, stepCount: stepCount) { progress in
-                Task { @MainActor in
-                    progressHandler(progress.step, progress.stepCount)
+                let step = progress.step + 1
+                let total = progress.stepCount
+                print("[StableDiffusion] Generation progress: step \(step) of \(total)")
+                DispatchQueue.main.async {
+                    progressHandler(step, total)
                 }
                 return true
             }
             if let cgImage = images.first {
+                print("[StableDiffusion] Generation complete")
                 return UIImage(cgImage: cgImage)
             }
         } catch {
+            print("[StableDiffusion] Generation failed: \(error.localizedDescription)")
             return nil
         }
         return nil
     }
 }
 #else
-@MainActor
 class StableDiffusionImageGenerator {
     init() {}
     func generate(prompt: String,

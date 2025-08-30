@@ -148,8 +148,9 @@ struct ContentView: View {
                                         sdStep = 0
                                         sdStepCount = 20
                                         generatedImage = await sdGenerator.generate(prompt: prompt) { step, total in
-                                            sdStep = step + 1
+                                            sdStep = step
                                             sdStepCount = total
+                                            print("[StableDiffusion] UI progress: step \(step) of \(total)")
                                         }
                                     }
                                 }
@@ -385,8 +386,9 @@ struct ContentView: View {
                 sdStep = 0
                 sdStepCount = 20
                 generatedImage = await sdGenerator.generate(prompt: prompt) { step, total in
-                    sdStep = step + 1
+                    sdStep = step
                     sdStepCount = total
+                    print("[StableDiffusion] UI progress: step \(step) of \(total)")
                 }
             }
         }
@@ -397,8 +399,9 @@ struct ContentView: View {
             sdStep = 0
             sdStepCount = 20
             generatedImage = await sdGenerator.generate(prompt: prompt) { step, total in
-                sdStep = step + 1
+                sdStep = step
                 sdStepCount = total
+                print("[StableDiffusion] UI progress: step \(step) of \(total)")
             }
         }
 #endif
