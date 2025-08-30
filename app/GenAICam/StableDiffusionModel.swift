@@ -115,13 +115,17 @@ class StableDiffusionModel: ObservableObject {
         print("[StableDiffusion] Extracting archive...")
 
         #if canImport(ZIPFoundation)
-        try fm.unzipItem(at: zipURL, to: tempDir, progress: { progress in
-            print(String(format: "[StableDiffusion] Extraction progress: %.0f%%", progress * 100))
+        let unzipProgress = Progress(totalUnitCount: 100)
+        let observation = unzipProgress.observe(\.fractionCompleted) { progress, _ in
+            let fraction = progress.fractionCompleted
+            print(String(format: "[StableDiffusion] Extraction progress: %.0f%%", fraction * 100))
             Task { @MainActor in
-                self.modelInfo = "Extracting \(Int(progress * 100))%"
-                self.downloadProgress = progress
+                self.modelInfo = "Extracting \(Int(fraction * 100))%"
+                self.downloadProgress = fraction
             }
-        })
+        }
+        try fm.unzipItem(at: zipURL, to: tempDir, progress: unzipProgress)
+        observation.invalidate()
         print("[StableDiffusion] Extraction complete")
         #else
         throw NSError(domain: "StableDiffusionModel", code: -1,
