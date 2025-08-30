@@ -20,8 +20,11 @@ class StableDiffusionModel: ObservableObject {
     }()
 
     static func modelExists() -> Bool {
-        let unet = modelDirectory.appendingPathComponent("UnetPalettized.mlpackage")
-        return FileManager.default.fileExists(atPath: unet.path)
+        let fm = FileManager.default
+        guard let items = try? fm.contentsOfDirectory(at: modelDirectory, includingPropertiesForKeys: nil, options: [.skipsHiddenFiles]) else {
+            return false
+        }
+        return items.contains { $0.pathExtension == "mlpackage" }
     }
 
     private var modelDownloadURL: URL {
@@ -52,8 +55,7 @@ class StableDiffusionModel: ObservableObject {
     }
 
     private func ensureModelAvailable() async throws {
-        let marker = Self.modelDirectory.appendingPathComponent("UnetPalettized.mlpackage")
-        if FileManager.default.fileExists(atPath: marker.path) { return }
+        if Self.modelExists() { return }
 
         let fm = FileManager.default
         try fm.createDirectory(at: Self.modelDirectory, withIntermediateDirectories: true)
@@ -121,7 +123,10 @@ class StableDiffusionModel: ObservableObject {
 
         // Determine the top-level directory produced by the archive
         let extractedItems = try fm.contentsOfDirectory(at: tempDir, includingPropertiesForKeys: [.isDirectoryKey], options: [.skipsHiddenFiles])
-        guard let extractedRoot = extractedItems.first(where: { (try? $0.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true }) else {
+        guard let extractedRoot = extractedItems.first(where: { url in
+            guard let isDir = try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory, isDir else { return false }
+            return url.lastPathComponent != "__MACOSX"
+        }) else {
             throw NSError(domain: "StableDiffusionModel", code: -2, userInfo: [NSLocalizedDescriptionKey: "Invalid archive structure"])
         }
         let files = try fm.contentsOfDirectory(at: extractedRoot, includingPropertiesForKeys: nil)
