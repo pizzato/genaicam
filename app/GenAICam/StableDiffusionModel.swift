@@ -14,10 +14,10 @@ class StableDiffusionModel: ObservableObject {
     @Published var modelInfo: String = ""
     @Published var downloadProgress: Double? = nil
 
-    nonisolated static var modelDirectory: URL = {
+    nonisolated static var modelDirectory: URL {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
         return support.appendingPathComponent("StableDiffusion/model", isDirectory: true)
-    }()
+    }
 
     static func modelExists() -> Bool {
         let fm = FileManager.default

@@ -89,7 +89,6 @@ class PlaygroundImageGenerator {
       func generate(from image: UIImage, style: PlaygroundStyle) async -> UIImage? { nil }
 }
 #endif
-#endif
 
 #if canImport(StableDiffusion)
 /// Wrapper around the Core ML Stable Diffusion pipeline.
