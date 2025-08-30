@@ -5,14 +5,14 @@
 
 import Foundation
 import CoreML
-#if canImport(StableDiffusion) && os(iOS)
+#if canImport(StableDiffusion)
 import StableDiffusion
 #endif
-#if os(iOS)
+#if canImport(UIKit)
 import UIKit
+#endif
 #if canImport(ImagePlayground)
 import ImagePlayground
-#endif
 #endif
 
 /// Style options for Image Playground generation.
@@ -90,11 +90,11 @@ class PlaygroundImageGenerator {
 }
 #endif
 
-#if canImport(StableDiffusion) && os(iOS)
+#if canImport(StableDiffusion) && canImport(UIKit)
 /// Wrapper around the Core ML Stable Diffusion pipeline.
 @available(iOS 16.2, macOS 13.1, *)
 class StableDiffusionImageGenerator {
-    private var pipeline: StableDiffusionPipeline?
+    private var pipeline: StableDiffusion.StableDiffusionPipeline?
 
     init() {}
 
@@ -111,11 +111,11 @@ class StableDiffusionImageGenerator {
                 let resources = StableDiffusionModel.modelDirectory
                 let config = MLModelConfiguration()
                 config.computeUnits = .all
-                pipeline = try StableDiffusionPipeline(resourcesAt: resources, configuration: config)
+                pipeline = try StableDiffusion.StableDiffusionPipeline(resourcesAt: resources, configuration: config)
                 print("[StableDiffusion] Loaded pipeline from \(resources.path)")
             }
             guard let pipeline else { return nil }
-            var sdConfig = StableDiffusionPipeline.Configuration(prompt: prompt)
+            var sdConfig = StableDiffusion.StableDiffusionPipeline.Configuration(prompt: prompt)
             sdConfig.stepCount = 20
             let images = try pipeline.generateImages(configuration: sdConfig) { progress in
                 let step = progress.step + 1
