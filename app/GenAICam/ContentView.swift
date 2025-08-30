@@ -59,7 +59,7 @@ struct ContentView: View {
 #if os(iOS)
     @State private var generatedImage: UIImage?
 #endif
-    @State private var sdGenerator = StableDiffusionImageGenerator()
+    @State private var sdGenerator = CoreMLStableDiffusionGenerator()
     @State private var sdStep: Int = 0
     @State private var sdStepCount: Int = 0
 #if os(iOS) && canImport(ImagePlayground)
