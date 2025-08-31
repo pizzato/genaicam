@@ -378,19 +378,29 @@ struct ContentView: View {
 
         if mode == .stableDiffusion {
             let prompt = longDescription.isEmpty ? shortDescription : longDescription
+            print("[ContentView] Starting Stable Diffusion generation")
             Task {
                 generationStatus = "Preparing..."
                 generatedImage = nil
+                print("[ContentView] Prompt: \(prompt)")
                 let image = await sdGenerator.generate(prompt: prompt) { step, total in
                     generationStatus = "Step \(step) of \(total)"
+                    print("[ContentView] Step \(step) of \(total)")
                 }
-                generatedImage = image
-                generationStatus = ""
+                if let image {
+                    generatedImage = image
+                    generationStatus = ""
+                    print("[ContentView] Stable Diffusion generation succeeded")
+                } else {
+                    generationStatus = "Generation failed"
+                    print("[ContentView] Stable Diffusion generation failed")
+                }
             }
         } else {
 #if os(iOS) && canImport(ImagePlayground)
             if #available(iOS 18.0, *), let capturedImage {
                 let chosenStyle = style
+                print("[ContentView] Starting Image Playground generation with style \(chosenStyle.rawValue)")
                 Task {
                     generationStatus = "Generating..."
                     generatedImage = nil
@@ -399,6 +409,7 @@ struct ContentView: View {
                         style: chosenStyle
                     )
                     generationStatus = ""
+                    print("[ContentView] Image Playground generation finished")
                 }
             }
 #endif

@@ -8,36 +8,42 @@ struct ModelDownloadView: View {
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("On this first run, press Download to get Apple’s FastVLM model (~1.1 GB) and the Stable Diffusion model. This one-time setup enables offline features and is the only time the app needs internet. Please use Wi-Fi.")
+            Text("Download the required models to enable offline features. This will fetch Apple’s FastVLM (~1.1 GB) for descriptions and the Core ML Stable Diffusion 2.1 model (~4.5 GB) for image generation. Please use Wi‑Fi.")
                 .multilineTextAlignment(.center)
                 .padding()
             if isDownloading {
                 VStack {
-                    if let progress = model.downloadProgress {
-                        ProgressView(value: progress, total: 1.0)
-                            .progressViewStyle(.linear)
-                            .padding()
-                    } else {
-                        ProgressView()
-                            .progressViewStyle(.linear)
-                            .padding()
+                    VStack {
+                        Text("FastVLM")
+                        if let progress = model.downloadProgress {
+                            ProgressView(value: progress, total: 1.0)
+                                .progressViewStyle(.linear)
+                                .padding()
+                        } else {
+                            ProgressView()
+                                .progressViewStyle(.linear)
+                                .padding()
+                        }
+                        Text(model.modelInfo)
                     }
-                    Text(model.modelInfo)
-                    if let progress = sdModel.downloadProgress {
-                        ProgressView(value: progress, total: 1.0)
-                            .progressViewStyle(.linear)
-                            .padding()
-                    } else {
-                        ProgressView()
-                            .progressViewStyle(.linear)
-                            .padding()
+                    VStack {
+                        Text("Stable Diffusion")
+                        if let progress = sdModel.downloadProgress {
+                            ProgressView(value: progress, total: 1.0)
+                                .progressViewStyle(.linear)
+                                .padding()
+                        } else {
+                            ProgressView()
+                                .progressViewStyle(.linear)
+                                .padding()
+                        }
+                        Text(sdModel.status)
                     }
-                    Text(sdModel.status)
                 }
             } else {
                 VStack {
-                    Text(model.modelInfo)
-                    Text(sdModel.status)
+                    Text("FastVLM: \(model.modelInfo)")
+                    Text("Stable Diffusion: \(sdModel.status)")
                 }
                 Button("Download Models") {
                     isDownloading = true

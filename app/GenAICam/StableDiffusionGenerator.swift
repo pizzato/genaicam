@@ -40,11 +40,13 @@ class StableDiffusionGenerator: ObservableObject {
         if fm.fileExists(atPath: modelPath) {
             status = "Model ready"
             downloadProgress = 1.0
+            print("[StableDiffusion] Model already available at \(modelPath)")
             return true
         }
 
-        status = "Downloading..."
+        status = "Starting download"
         downloadProgress = 0
+        print("[StableDiffusion] Downloading model from \(modelArchiveURL.absoluteString)")
 
         do {
             try fm.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
@@ -57,23 +59,30 @@ class StableDiffusionGenerator: ObservableObject {
             try await downloader.download(from: modelArchiveURL, to: zipURL) { received, expected in
                 let progress = expected > 0 ? Double(received) / Double(expected) : nil
                 Task { @MainActor in
-                    if let progress { self.downloadProgress = progress; self.status = String(format: "Downloading %d%%", Int(progress * 100)) }
+                    if let progress {
+                        self.downloadProgress = progress
+                        self.status = String(format: "Downloading %d%%", Int(progress * 100))
+                        print("[StableDiffusion] Download progress: \(Int(progress * 100))%")
+                    }
                 }
             }
 
             #if canImport(ZIPFoundation)
+            print("[StableDiffusion] Unzipping model to \(modelDirectory.path)")
             try fm.unzipItem(at: zipURL, to: modelDirectory)
             #endif
 
             await MainActor.run {
                 self.status = "Download complete"
                 self.downloadProgress = 1.0
+                print("[StableDiffusion] Model download complete")
             }
             return true
         } catch {
             await MainActor.run {
                 self.status = "Download failed"
                 self.downloadProgress = nil
+                print("[StableDiffusion] Download failed: \(error.localizedDescription)")
             }
             return false
         }
@@ -87,18 +96,24 @@ class StableDiffusionGenerator: ObservableObject {
     func generate(prompt: String, progress: @escaping (Int, Int) -> Void) async -> UIImage? {
         #if canImport(StableDiffusion)
         do {
+            print("[StableDiffusion] Starting generation for prompt: \(prompt)")
             let resourcesURL = modelDirectory
             let pipeline = try StableDiffusionPipeline(resourcesAt: resourcesURL)
             pipeline.progressHandler = { step, stepCount in
-                progress(step + 1, stepCount)
+                let current = step + 1
+                progress(current, stepCount)
+                print("[StableDiffusion] Step \(current)/\(stepCount)")
                 return true
             }
             let images = try pipeline.generate(prompt: prompt, stepCount: 20, seed: UInt32.random(in: 0..<UInt32.max))
+            print("[StableDiffusion] Generation complete")
             return images.first
         } catch {
+            print("[StableDiffusion] Generation failed: \(error.localizedDescription)")
             return nil
         }
         #else
+        print("[StableDiffusion] StableDiffusion framework not available")
         return nil
         #endif
     }
