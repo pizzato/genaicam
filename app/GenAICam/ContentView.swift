@@ -65,6 +65,9 @@ struct ContentView: View {
     @available(iOS 18.0, *)
     @AppStorage("playgroundStyle") private var playgroundStyle: PlaygroundStyle = .sketch
 #endif
+    @AppStorage("imageGeneratorMode") private var generatorMode: ImageGeneratorMode = .stableDiffusion
+    @StateObject private var sdGenerator = StableDiffusionGenerator()
+    @State private var generationStatus: String = ""
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
     @State private var showWelcome: Bool = false
     @State private var previousOutput: String = ""
@@ -202,15 +205,17 @@ struct ContentView: View {
                             image: capturedImage,
                             generatedImage: $generatedImage,
                             description: $shortDescription,
+                            generationStatus: $generationStatus,
                             shortDescription: shortDescription,
                             longDescription: longDescription,
                             onRetake: {
                                 showPreview = false
                                 model.output = ""
                                 model.cancel()
+                                generationStatus = ""
                             },
-                            onRecreate: { style in
-                                recreateImage(style: style)
+                            onRecreate: { option in
+                                recreateImage(option: option)
         }
         )
             }
@@ -224,7 +229,8 @@ struct ContentView: View {
                 style: $playgroundStyle,
                 mode: $descriptionMode,
                 isRealTime: $isRealTime,
-                showDescription: $showDescription
+                showDescription: $showDescription,
+                generatorMode: $generatorMode
             )
         }
         .onChange(of: isRealTime) { _, newValue in
@@ -357,19 +363,46 @@ struct ContentView: View {
         }
     }
 
-    func recreateImage(style: PlaygroundStyle? = nil) {
-#if os(iOS) && canImport(ImagePlayground)
-        if #available(iOS 18.0, *), let capturedImage {
-            let chosenStyle = style ?? playgroundStyle
-            Task {
-                generatedImage = nil
-                generatedImage = await imageGenerator.generate(
-                    from: capturedImage,
-                    style: chosenStyle
-                )
+    func recreateImage(option: GenerationOption? = nil) {
+        var mode = generatorMode
+        var style = playgroundStyle
+        if let option {
+            switch option {
+            case .stableDiffusion:
+                mode = .stableDiffusion
+            case .playground(let s):
+                mode = .imagePlayground
+                style = s
             }
         }
+
+        if mode == .stableDiffusion {
+            let prompt = longDescription.isEmpty ? shortDescription : longDescription
+            Task {
+                generationStatus = "Preparing..."
+                generatedImage = nil
+                let image = await sdGenerator.generate(prompt: prompt) { step, total in
+                    generationStatus = "Step \(step) of \(total)"
+                }
+                generatedImage = image
+                generationStatus = ""
+            }
+        } else {
+#if os(iOS) && canImport(ImagePlayground)
+            if #available(iOS 18.0, *), let capturedImage {
+                let chosenStyle = style
+                Task {
+                    generationStatus = "Generating..."
+                    generatedImage = nil
+                    generatedImage = await imageGenerator.generate(
+                        from: capturedImage,
+                        style: chosenStyle
+                    )
+                    generationStatus = ""
+                }
+            }
 #endif
+        }
     }
 
     func makeUIImage(from buffer: CVImageBuffer) -> UIImage? {

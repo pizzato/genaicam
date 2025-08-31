@@ -12,10 +12,11 @@ struct PhotoPreviewView: View {
     let image: UIImage
     @Binding var generatedImage: UIImage?
     @Binding var description: String
+    @Binding var generationStatus: String
     let shortDescription: String
     let longDescription: String
     var onRetake: () -> Void
-    var onRecreate: (PlaygroundStyle?) -> Void
+    var onRecreate: (GenerationOption?) -> Void
 
     @State private var showShare = false
     @State private var showMore = false
@@ -94,9 +95,10 @@ struct PhotoPreviewView: View {
                             )
                         }
                         .contextMenu {
+                            Button("Stable Diffusion") { onRecreate(.stableDiffusion) }
                             ForEach(PlaygroundStyle.allCases) { option in
-                                Button(option.rawValue.capitalized) {
-                                    onRecreate(option)
+                                Button("Playground: \(option.rawValue.capitalized)") {
+                                    onRecreate(.playground(option))
                                 }
                             }
                         }
@@ -132,7 +134,12 @@ struct PhotoPreviewView: View {
                             Text("Generating image")
                                 .font(.headline)
                                 .foregroundColor(.white)
-                            if !description.isEmpty {
+                            if !generationStatus.isEmpty {
+                                Text(generationStatus)
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                            } else if !description.isEmpty {
                                 Text(description)
                                     .font(.subheadline)
                                     .foregroundColor(.white)

@@ -7,7 +7,7 @@ import SwiftUI
 
 @main
 struct GenAICamApp: App {
-    @State private var needsModelDownload = !FastVLMModel.modelExists()
+    @State private var needsModelDownload = !(FastVLMModel.modelExists() && StableDiffusionGenerator.modelExists())
 
     var body: some Scene {
         WindowGroup {
