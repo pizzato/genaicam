@@ -1120,42 +1120,42 @@
 /* Begin XCRemoteSwiftPackageReference section */
                C35EDB6A2D076A3900757E80 /* XCRemoteSwiftPackageReference "mlx-swift-examples" */ = {
                        isa = XCRemoteSwiftPackageReference;
-                       repositoryURL = "https://github.com/ml-explore/mlx-swift-examples";
+                       repositoryURL = "https://github.com/ml-explore/mlx-swift-examples.git";
                        requirement = {
-                               kind = upToNextMajorVersion;
-                               minimumVersion = 2.25.6;
+                               kind = exactVersion;
+                               version = 2.25.6;
                        };
                };
                C35EDB8A2D07777E00757E80 /* XCRemoteSwiftPackageReference "mlx-swift" */ = {
                        isa = XCRemoteSwiftPackageReference;
-                       repositoryURL = "https://github.com/ml-explore/mlx-swift";
+                       repositoryURL = "https://github.com/ml-explore/mlx-swift.git";
                        requirement = {
-                               kind = upToNextMajorVersion;
-                               minimumVersion = 0.25.6;
+                               kind = exactVersion;
+                               version = 0.25.6;
                        };
                };
                C3ED54592D790AC6005E20B3 /* XCRemoteSwiftPackageReference "swift-transformers" */ = {
                        isa = XCRemoteSwiftPackageReference;
-                       repositoryURL = "https://github.com/huggingface/swift-transformers";
+                       repositoryURL = "https://github.com/huggingface/swift-transformers.git";
                        requirement = {
-                               kind = upToNextMajorVersion;
-                               minimumVersion = 0.1.22;
+                               kind = exactVersion;
+                               version = 0.1.22;
                        };
                };
                 C3F4ABCA2D8E0F50005E20B3 /* XCRemoteSwiftPackageReference "ZIPFoundation" */ = {
                         isa = XCRemoteSwiftPackageReference;
                         repositoryURL = "https://github.com/weichsel/ZIPFoundation.git";
                         requirement = {
-                                kind = upToNextMajorVersion;
-                                minimumVersion = 0.9.19;
+                                kind = exactVersion;
+                                version = 0.9.19;
                         };
                 };
                 7C67187DEE70414188A98866 /* XCRemoteSwiftPackageReference "ml-stable-diffusion" */ = {
                         isa = XCRemoteSwiftPackageReference;
                         repositoryURL = "https://github.com/apple/ml-stable-diffusion.git";
                         requirement = {
-                                kind = upToNextMajorVersion;
-                                minimumVersion = 1.1.1;
+                                kind = exactVersion;
+                                version = 1.1.1;
                         };
                 };
 /* End XCRemoteSwiftPackageReference section */
