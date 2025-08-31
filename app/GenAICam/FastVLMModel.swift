@@ -109,78 +109,65 @@ class FastVLMModel: ObservableObject {
         let fm = FileManager.default
         try fm.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
 
-        final class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
-            let progressHandler: (Int64, Int64) -> Void
-            init(progressHandler: @escaping (Int64, Int64) -> Void) {
-                self.progressHandler = progressHandler
-            }
+        // Temporary workspace
+        let tempDir = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
+        defer { try? fm.removeItem(at: tempDir) }
 
-            func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
-                            didWriteData bytesWritten: Int64, totalBytesWritten: Int64,
-                            totalBytesExpectedToWrite: Int64) {
-                progressHandler(totalBytesWritten, totalBytesExpectedToWrite)
-            }
+        // Stream the download to disk so we can track progress
+        let zipURL = tempDir.appendingPathComponent("model.zip")
+        fm.createFile(atPath: zipURL.path, contents: nil)
+        let handle = try FileHandle(forWritingTo: zipURL)
 
-            func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
-                            didFinishDownloadingTo location: URL) {
-                // Required by URLSessionDownloadDelegate; handled by async API.
-            }
-        }
+        let (bytes, response) = try await URLSession.shared.bytes(from: modelDownloadURL)
+        let expectedBytes = response.expectedContentLength
 
+        var received: Int64 = 0
         var lastReportedMB: Int64 = -1
-        let delegate = DownloadDelegate { totalBytesWritten, totalBytesExpected in
-            let mb = 1024.0 * 1024.0
-            let writtenMBInt = Int64(Double(totalBytesWritten) / mb)
+        let mb = 1024.0 * 1024.0
+        var buffer = Data()
+
+        for try await byte in bytes {
+            received += 1
+            buffer.append(byte)
+            if buffer.count >= 64 * 1024 {
+                try handle.write(contentsOf: buffer)
+                buffer.removeAll(keepingCapacity: true)
+            }
+
+            let writtenMBInt = Int64(Double(received) / mb)
             // Only report when a new MB has been downloaded or at completion
-            guard writtenMBInt != lastReportedMB || totalBytesWritten == totalBytesExpected else {
-                return
+            guard writtenMBInt != lastReportedMB || (expectedBytes > 0 && received == expectedBytes) else {
+                continue
             }
             lastReportedMB = writtenMBInt
 
-            let writtenMB = Double(totalBytesWritten) / mb
-            let expectedMB = totalBytesExpected > 0 ? Double(totalBytesExpected) / mb : nil
+            let writtenMB = Double(received) / mb
+            let expectedMB = expectedBytes > 0 ? Double(expectedBytes) / mb : nil
             let progress = expectedMB.map { writtenMB / $0 }
 
             if let expectedMB, let progress {
-                print(
-                    String(
-                        format: "[FastVLM] Download progress: %.0f/%.0f MB (%.0f%%)",
-                        writtenMB, expectedMB, progress * 100
-                    )
-                )
+                print(String(format: "[FastVLM] Download progress: %.0f/%.0f MB (%.0f%%)",
+                              writtenMB, expectedMB, progress * 100))
             } else {
                 print(String(format: "[FastVLM] Downloaded %.0f MB", writtenMB))
             }
 
             Task { @MainActor in
                 if let progress, let expectedMB {
-                    withAnimation(.linear) {
-                        self.downloadProgress = progress
-                    }
-                    self.modelInfo =
-                        String(
-                            format: "Downloading %.0f/%.0f MB", writtenMB, expectedMB
-                        )
+                    withAnimation(.linear) { self.downloadProgress = progress }
+                    self.modelInfo = String(format: "Downloading %.0f/%.0f MB", writtenMB, expectedMB)
                 } else {
-                    withAnimation(.linear) {
-                        self.downloadProgress = nil
-                    }
+                    withAnimation(.linear) { self.downloadProgress = nil }
                     self.modelInfo = String(format: "Downloading %.0f MB", writtenMB)
                 }
             }
         }
-
-        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
-
-        // Temporary workspace
-        let tempDir = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
-        try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
-        defer { try? fm.removeItem(at: tempDir) }
-
-        let (downloadedURL, _) = try await session.download(from: modelDownloadURL)
-        print("[FastVLM] Downloaded archive to \(downloadedURL.path)")
-        let zipURL = tempDir.appendingPathComponent("model.zip")
-        try fm.moveItem(at: downloadedURL, to: zipURL)
+        if !buffer.isEmpty {
+            try handle.write(contentsOf: buffer)
+        }
+        try handle.close()
+        print("[FastVLM] Downloaded archive to \(zipURL.path)")
 
         await MainActor.run {
             withAnimation(.linear) {
