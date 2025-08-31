@@ -170,14 +170,14 @@ class FastVLMModel: ObservableObject {
             }
         }
 
-        let session = URLSession(configuration: .default)
+        let session = URLSession(configuration: .default, delegate: delegate, delegateQueue: nil)
 
         // Temporary workspace
         let tempDir = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
         defer { try? fm.removeItem(at: tempDir) }
 
-        let (downloadedURL, _) = try await session.download(from: modelDownloadURL, delegate: delegate)
+        let (downloadedURL, _) = try await session.download(from: modelDownloadURL)
         print("[FastVLM] Downloaded archive to \(downloadedURL.path)")
         let zipURL = tempDir.appendingPathComponent("model.zip")
         try fm.moveItem(at: downloadedURL, to: zipURL)
