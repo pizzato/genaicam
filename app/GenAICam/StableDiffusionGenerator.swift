@@ -6,9 +6,7 @@
 import Foundation
 import SwiftUI
 import CoreML
-#if canImport(StableDiffusion)
 import StableDiffusion
-#endif
 #if canImport(ZIPFoundation)
 import ZIPFoundation
 #endif
@@ -17,7 +15,7 @@ import ZIPFoundation
 @MainActor
 class StableDiffusionGenerator: ObservableObject {
     @Published var downloadProgress: Double? = nil
-    @Published var status: String = ""
+    @Published var status: String = "Model not downloaded"
 
     private let modelDirectory: URL = {
         let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
@@ -94,7 +92,6 @@ class StableDiffusionGenerator: ObservableObject {
     ///   - progress: Called with the current step and total step count.
     /// - Returns: Generated image or nil on failure.
     func generate(prompt: String, progress: @escaping (Int, Int) -> Void) async -> UIImage? {
-        #if canImport(StableDiffusion)
         do {
             print("[StableDiffusion] Starting generation for prompt: \(prompt)")
             let resourcesURL = modelDirectory
@@ -112,10 +109,6 @@ class StableDiffusionGenerator: ObservableObject {
             print("[StableDiffusion] Generation failed: \(error.localizedDescription)")
             return nil
         }
-        #else
-        print("[StableDiffusion] StableDiffusion framework not available")
-        return nil
-        #endif
     }
 }
 

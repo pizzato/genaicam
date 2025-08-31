@@ -191,6 +191,10 @@ struct ContentView: View {
             if !hasSeenWelcome {
                 showWelcome = true
             }
+            // Ensure Stable Diffusion is the default generator
+            if generatorMode != .stableDiffusion {
+                generatorMode = .stableDiffusion
+            }
         }
         #if os(iOS)
         .onAppear {
