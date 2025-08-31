@@ -16,6 +16,62 @@ import ZIPFoundation
 import Combine
 import SwiftUI
 
+// Helper delegate to report download progress roughly once per second
+private final class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
+    var progressHandler: ((Int64, Int64) -> Void)?
+    var destinationURL: URL?
+    private var continuation: CheckedContinuation<Void, Error>?
+    private var session: URLSession?
+    private var lastUpdate = Date.distantPast
+
+    func download(from url: URL, to destinationURL: URL,
+                  progress: @escaping (Int64, Int64) -> Void) async throws {
+        self.destinationURL = destinationURL
+        self.progressHandler = progress
+        let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
+        self.session = session
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            self.continuation = continuation
+            session.downloadTask(with: url).resume()
+        }
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
+                    didWriteData bytesWritten: Int64, totalBytesWritten: Int64,
+                    totalBytesExpectedToWrite: Int64) {
+        let now = Date()
+        if now.timeIntervalSince(lastUpdate) >= 1 ||
+            totalBytesWritten == totalBytesExpectedToWrite {
+            lastUpdate = now
+            progressHandler?(totalBytesWritten, totalBytesExpectedToWrite)
+        }
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
+                    didFinishDownloadingTo location: URL) {
+        do {
+            if let dest = destinationURL {
+                let fm = FileManager.default
+                if fm.fileExists(atPath: dest.path) {
+                    try fm.removeItem(at: dest)
+                }
+                try fm.moveItem(at: location, to: dest)
+            }
+            continuation?.resume(returning: ())
+        } catch {
+            continuation?.resume(throwing: error)
+        }
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask,
+                    didCompleteWithError error: Error?) {
+        if let error {
+            continuation?.resume(throwing: error)
+        }
+        session.invalidateAndCancel()
+    }
+}
+
 @MainActor
 class FastVLMModel: ObservableObject {
 
@@ -109,59 +165,38 @@ class FastVLMModel: ObservableObject {
         let fm = FileManager.default
         try fm.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
 
-        final class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
-            let progressHandler: (Double?) -> Void
-            init(progressHandler: @escaping (Double?) -> Void) { self.progressHandler = progressHandler }
-
-            func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
-                            didWriteData bytesWritten: Int64, totalBytesWritten: Int64,
-                            totalBytesExpectedToWrite: Int64) {
-                if totalBytesExpectedToWrite > 0 {
-                    let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
-                    progressHandler(progress)
-                } else {
-                    progressHandler(nil)
-                }
-            }
-
-            func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
-                            didFinishDownloadingTo location: URL) {
-                // Required by URLSessionDownloadDelegate; handled by async API.
-            }
-        }
-
-        let delegate = DownloadDelegate { progress in
-            if let progress {
-                print(String(format: "[FastVLM] Download progress: %.0f%%", progress * 100))
-            } else {
-                print("[FastVLM] Downloading model (progress unavailable)")
-            }
-            Task { @MainActor in
-                if let progress {
-                    withAnimation(.linear) {
-                        self.downloadProgress = progress
-                    }
-                    self.modelInfo = "Downloading \(Int(progress * 100))%"
-                } else {
-                    withAnimation(.linear) {
-                        self.downloadProgress = nil
-                    }
-                    self.modelInfo = "Downloading..."
-                }
-            }
-        }
-
-        let session = URLSession(configuration: .default)
-
         // Temporary workspace
         let tempDir = fm.temporaryDirectory.appendingPathComponent(UUID().uuidString, isDirectory: true)
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
         defer { try? fm.removeItem(at: tempDir) }
 
-        let (downloadedURL, _) = try await session.download(from: modelDownloadURL, delegate: delegate)
-        print("[FastVLM] Downloaded archive to \(downloadedURL.path)")
+        // Download to a file while reporting progress roughly once per second
         let zipURL = tempDir.appendingPathComponent("model.zip")
-        try fm.moveItem(at: downloadedURL, to: zipURL)
+        let downloader = DownloadDelegate()
+        try await downloader.download(from: modelDownloadURL, to: zipURL) { received, expected in
+            let mb = 1024.0 * 1024.0
+            let writtenMB = Double(received) / mb
+            let expectedMB = expected > 0 ? Double(expected) / mb : nil
+            let progress = expected > 0 ? Double(received) / Double(expected) : nil
+
+            if let expectedMB, let progress {
+                print(String(format: "[FastVLM] Download progress: %.0f/%.0f MB (%.0f%%)",
+                              writtenMB, expectedMB, progress * 100))
+            } else {
+                print(String(format: "[FastVLM] Downloaded %.0f MB", writtenMB))
+            }
+
+            Task { @MainActor in
+                if let progress {
+                    withAnimation(.linear) { self.downloadProgress = progress }
+                    self.modelInfo = String(format: "Downloading %d%%", Int(progress * 100))
+                } else {
+                    withAnimation(.linear) { self.downloadProgress = nil }
+                    self.modelInfo = String(format: "Downloading %.0f MB", writtenMB)
+                }
+            }
+        }
+        print("[FastVLM] Downloaded archive to \(zipURL.path)")
 
         await MainActor.run {
             withAnimation(.linear) {
