@@ -16,6 +16,62 @@ import ZIPFoundation
 import Combine
 import SwiftUI
 
+// Helper delegate to report download progress roughly once per second
+private final class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
+    var progressHandler: ((Int64, Int64) -> Void)?
+    var destinationURL: URL?
+    private var continuation: CheckedContinuation<Void, Error>?
+    private var session: URLSession?
+    private var lastUpdate = Date.distantPast
+
+    func download(from url: URL, to destinationURL: URL,
+                  progress: @escaping (Int64, Int64) -> Void) async throws {
+        self.destinationURL = destinationURL
+        self.progressHandler = progress
+        let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
+        self.session = session
+        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
+            self.continuation = continuation
+            session.downloadTask(with: url).resume()
+        }
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
+                    didWriteData bytesWritten: Int64, totalBytesWritten: Int64,
+                    totalBytesExpectedToWrite: Int64) {
+        let now = Date()
+        if now.timeIntervalSince(lastUpdate) >= 1 ||
+            totalBytesWritten == totalBytesExpectedToWrite {
+            lastUpdate = now
+            progressHandler?(totalBytesWritten, totalBytesExpectedToWrite)
+        }
+    }
+
+    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
+                    didFinishDownloadingTo location: URL) {
+        do {
+            if let dest = destinationURL {
+                let fm = FileManager.default
+                if fm.fileExists(atPath: dest.path) {
+                    try fm.removeItem(at: dest)
+                }
+                try fm.moveItem(at: location, to: dest)
+            }
+            continuation?.resume(returning: ())
+        } catch {
+            continuation?.resume(throwing: error)
+        }
+    }
+
+    func urlSession(_ session: URLSession, task: URLSessionTask,
+                    didCompleteWithError error: Error?) {
+        if let error {
+            continuation?.resume(throwing: error)
+        }
+        session.invalidateAndCancel()
+    }
+}
+
 @MainActor
 class FastVLMModel: ObservableObject {
 
@@ -114,37 +170,14 @@ class FastVLMModel: ObservableObject {
         try fm.createDirectory(at: tempDir, withIntermediateDirectories: true)
         defer { try? fm.removeItem(at: tempDir) }
 
-        // Stream the download to disk so we can track progress
+        // Download to a file while reporting progress roughly once per second
         let zipURL = tempDir.appendingPathComponent("model.zip")
-        fm.createFile(atPath: zipURL.path, contents: nil)
-        let handle = try FileHandle(forWritingTo: zipURL)
-
-        let (bytes, response) = try await URLSession.shared.bytes(from: modelDownloadURL)
-        let expectedBytes = response.expectedContentLength
-
-        var received: Int64 = 0
-        var lastReportedMB: Int64 = -1
-        let mb = 1024.0 * 1024.0
-        var buffer = Data()
-
-        for try await byte in bytes {
-            received += 1
-            buffer.append(byte)
-            if buffer.count >= 64 * 1024 {
-                try handle.write(contentsOf: buffer)
-                buffer.removeAll(keepingCapacity: true)
-            }
-
-            let writtenMBInt = Int64(Double(received) / mb)
-            // Only report when a new MB has been downloaded or at completion
-            guard writtenMBInt != lastReportedMB || (expectedBytes > 0 && received == expectedBytes) else {
-                continue
-            }
-            lastReportedMB = writtenMBInt
-
+        let downloader = DownloadDelegate()
+        try await downloader.download(from: modelDownloadURL, to: zipURL) { received, expected in
+            let mb = 1024.0 * 1024.0
             let writtenMB = Double(received) / mb
-            let expectedMB = expectedBytes > 0 ? Double(expectedBytes) / mb : nil
-            let progress = expectedMB.map { writtenMB / $0 }
+            let expectedMB = expected > 0 ? Double(expected) / mb : nil
+            let progress = expected > 0 ? Double(received) / Double(expected) : nil
 
             if let expectedMB, let progress {
                 print(String(format: "[FastVLM] Download progress: %.0f/%.0f MB (%.0f%%)",
@@ -154,19 +187,15 @@ class FastVLMModel: ObservableObject {
             }
 
             Task { @MainActor in
-                if let progress, let expectedMB {
+                if let progress {
                     withAnimation(.linear) { self.downloadProgress = progress }
-                    self.modelInfo = String(format: "Downloading %.0f/%.0f MB", writtenMB, expectedMB)
+                    self.modelInfo = String(format: "Downloading %d%%", Int(progress * 100))
                 } else {
                     withAnimation(.linear) { self.downloadProgress = nil }
                     self.modelInfo = String(format: "Downloading %.0f MB", writtenMB)
                 }
             }
         }
-        if !buffer.isEmpty {
-            try handle.write(contentsOf: buffer)
-        }
-        try handle.close()
         print("[FastVLM] Downloaded archive to \(zipURL.path)")
 
         await MainActor.run {
