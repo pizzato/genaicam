@@ -110,18 +110,15 @@ class FastVLMModel: ObservableObject {
         try fm.createDirectory(at: modelDirectory, withIntermediateDirectories: true)
 
         final class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
-            let progressHandler: (Double?) -> Void
-            init(progressHandler: @escaping (Double?) -> Void) { self.progressHandler = progressHandler }
+            let progressHandler: (Int64, Int64) -> Void
+            init(progressHandler: @escaping (Int64, Int64) -> Void) {
+                self.progressHandler = progressHandler
+            }
 
             func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
                             didWriteData bytesWritten: Int64, totalBytesWritten: Int64,
                             totalBytesExpectedToWrite: Int64) {
-                if totalBytesExpectedToWrite > 0 {
-                    let progress = Double(totalBytesWritten) / Double(totalBytesExpectedToWrite)
-                    progressHandler(progress)
-                } else {
-                    progressHandler(nil)
-                }
+                progressHandler(totalBytesWritten, totalBytesExpectedToWrite)
             }
 
             func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
@@ -130,23 +127,45 @@ class FastVLMModel: ObservableObject {
             }
         }
 
-        let delegate = DownloadDelegate { progress in
-            if let progress {
-                print(String(format: "[FastVLM] Download progress: %.0f%%", progress * 100))
-            } else {
-                print("[FastVLM] Downloading model (progress unavailable)")
+        var lastReportedMB: Int64 = -1
+        let delegate = DownloadDelegate { totalBytesWritten, totalBytesExpected in
+            let mb = 1024.0 * 1024.0
+            let writtenMBInt = Int64(Double(totalBytesWritten) / mb)
+            // Only report when a new MB has been downloaded or at completion
+            guard writtenMBInt != lastReportedMB || totalBytesWritten == totalBytesExpected else {
+                return
             }
+            lastReportedMB = writtenMBInt
+
+            let writtenMB = Double(totalBytesWritten) / mb
+            let expectedMB = totalBytesExpected > 0 ? Double(totalBytesExpected) / mb : nil
+            let progress = expectedMB.map { writtenMB / $0 }
+
+            if let expectedMB, let progress {
+                print(
+                    String(
+                        format: "[FastVLM] Download progress: %.0f/%.0f MB (%.0f%%)",
+                        writtenMB, expectedMB, progress * 100
+                    )
+                )
+            } else {
+                print(String(format: "[FastVLM] Downloaded %.0f MB", writtenMB))
+            }
+
             Task { @MainActor in
-                if let progress {
+                if let progress, let expectedMB {
                     withAnimation(.linear) {
                         self.downloadProgress = progress
                     }
-                    self.modelInfo = "Downloading \(Int(progress * 100))%"
+                    self.modelInfo =
+                        String(
+                            format: "Downloading %.0f/%.0f MB", writtenMB, expectedMB
+                        )
                 } else {
                     withAnimation(.linear) {
                         self.downloadProgress = nil
                     }
-                    self.modelInfo = "Downloading..."
+                    self.modelInfo = String(format: "Downloading %.0f MB", writtenMB)
                 }
             }
         }
