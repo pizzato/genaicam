@@ -92,10 +92,10 @@ class PlaygroundImageGenerator {
 
 #if canImport(StableDiffusion) && canImport(UIKit)
 /// Wrapper around the Core ML Stable Diffusion framework using
-/// `StableDiffusionImageGenerator`.
+/// `StableDiffusionPipeline`.
 @available(iOS 16.2, macOS 13.1, *)
 class CoreMLStableDiffusionGenerator {
-    private var generator: StableDiffusionImageGenerator?
+    private var pipeline: StableDiffusionPipeline?
 
     init() {}
 
@@ -108,25 +108,29 @@ class CoreMLStableDiffusionGenerator {
                   progressHandler: @escaping @MainActor (Int, Int) -> Void) async -> UIImage? {
         print("[StableDiffusion] Starting generation for prompt: \(prompt)")
         do {
-            if generator == nil {
+            if pipeline == nil {
                 let resources = StableDiffusionModel.modelDirectory
                 let config = MLModelConfiguration()
                 config.computeUnits = .all
-                generator = try StableDiffusionImageGenerator(resourcesAt: resources,
-                                                              configuration: config)
-                print("[StableDiffusion] Initialized generator with resources at \(resources.path)")
+                pipeline = try StableDiffusionPipeline(resourcesAt: resources,
+                                                       controlNet: [],
+                                                       configuration: config,
+                                                       disableSafety: false,
+                                                       reduceMemory: true)
+                try pipeline?.loadResources()
+                print("[StableDiffusion] Initialized pipeline with resources at \(resources.path)")
             }
-            guard let generator else { return nil }
-            var sdConfig = StableDiffusionImageGenerator.Configuration(prompt: prompt)
+            guard let pipeline else { return nil }
+            var sdConfig = StableDiffusionPipeline.Configuration(prompt: prompt)
             sdConfig.stepCount = 20
-            let images = try generator.generateImages(configuration: sdConfig) { progress in
+            let images = try pipeline.generateImages(configuration: sdConfig) { progress in
                 let step = progress.step + 1
                 let total = progress.stepCount
                 print("[StableDiffusion] Generation progress: step \(step) of \(total)")
                 Task { @MainActor in progressHandler(step, total) }
                 return true
             }
-            if let cgImage = images.first {
+            if let cgImage = images.compactMap({ $0 }).first {
                 print("[StableDiffusion] Generation complete")
                 return UIImage(cgImage: cgImage)
             }
