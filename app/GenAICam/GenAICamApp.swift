@@ -10,12 +10,6 @@ struct GenAICamApp: App {
     @State private var needsModelDownload = !FastVLMModel.modelExists()
     @State private var showPlaygroundWarning = false
 
-    init() {
-#if os(iOS)
-        Task { await checkPlaygroundAvailability() }
-#endif
-    }
-
     var body: some Scene {
         WindowGroup {
             Group {
@@ -24,6 +18,11 @@ struct GenAICamApp: App {
                 } else {
                     ContentView()
                 }
+            }
+            .task {
+#if os(iOS)
+                await checkPlaygroundAvailability()
+#endif
             }
             .alert(
                 "Image Playground Unavailable",
