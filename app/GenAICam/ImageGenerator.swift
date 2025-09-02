@@ -18,6 +18,31 @@ enum PlaygroundStyle: String, CaseIterable, Identifiable {
     var id: String { rawValue }
 }
 
+/// Modes for image generation.
+enum ImageGeneratorMode: String, CaseIterable, Identifiable {
+    case stableDiffusion
+    case imagePlayground
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .stableDiffusion: return "Stable Diffusion"
+        case .imagePlayground: return "Image Playground"
+        }
+    }
+}
+
+/// Option selected when requesting a new image.
+enum GenerationOption: Identifiable {
+    case stableDiffusion
+    case playground(PlaygroundStyle)
+    var id: String {
+        switch self {
+        case .stableDiffusion: return "stableDiffusion"
+        case .playground(let style): return "playground-\(style.rawValue)"
+        }
+    }
+}
+
 #if canImport(ImagePlayground)
 /// Wrapper around Image Playground to generate images in the background.
 @MainActor

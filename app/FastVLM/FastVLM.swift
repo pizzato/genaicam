@@ -103,7 +103,9 @@ private enum Language {
         }
 
         public func callAsFunction(
-            _ x: MLXArray, mask: MLXArray? = nil, cache: KVCache?
+            _ x: MLXArray,
+            mask: MLXFast.ScaledDotProductAttentionMaskMode = .none,
+            cache: KVCache?
         ) -> MLXArray {
             let (B, L) = (x.dim(0), x.dim(1))
 
@@ -117,7 +119,6 @@ private enum Language {
             values = values.reshaped(B, L, kvHeads, headDim).transposed(0, 2, 1, 3)
 
             let offset = cache?.offset ?? 0
-            let mask = mask?[0..., 0 ..< keys.dim(-2)]
 
             queries = rotaryEmbedding(queries, offset: offset)
             keys = rotaryEmbedding(keys, offset: offset)
@@ -171,7 +172,9 @@ private enum Language {
         }
 
         public func callAsFunction(
-            _ x: MLXArray, mask: MLXArray? = nil, cache: KVCache?
+            _ x: MLXArray,
+            mask: MLXFast.ScaledDotProductAttentionMaskMode = .none,
+            cache: KVCache?
         ) -> MLXArray {
             var r = attention(inputLayerNorm(x), mask: mask, cache: cache)
             let h = x + r
@@ -213,7 +216,7 @@ private enum Language {
                 fatalError("one of inputs or inputEmbedding must be non-nil")
             }
 
-            let mask = createAttentionMask(h: h, cache: cache)
+            let mask: MLXFast.ScaledDotProductAttentionMaskMode = .causal
 
             for (i, layer) in layers.enumerated() {
                 h = layer(h, mask: mask, cache: cache?[i])
@@ -370,7 +373,16 @@ public class FastVLMProcessor: UserInputProcessor {
     }
 
     public func prepare(prompt: UserInput.Prompt, imageTHW: THW?) -> String {
-        var messages = prompt.asMessages()
+        var messages: [[String: String]]
+        switch prompt {
+        case .text(let text):
+            messages = [["role": "user", "content": text]]
+        case .messages(let m):
+            messages = m
+        @unknown default:
+            messages = [["role": "user", "content": ""]]
+        }
+
         if messages[0]["role"] != "system" {
             messages.insert(["role": "system", "content": "You are a helpful assistant."], at: 0)
         }
@@ -420,7 +432,7 @@ public class FastVLMProcessor: UserInputProcessor {
 
         let (pixels, thw) = try preprocess(
             image: input.images[0].asCIImage(), processing: input.processing)
-        let image = LMInput.ProcessedImage(pixels: pixels, imageGridThw: [thw])
+        let image = LMInput.ProcessedImage(pixels: pixels, gridThw: [thw])
 
         let prompt = prepare(prompt: input.prompt, imageTHW: thw)
         let promptTokens = tokenizer.encode(text: prompt)
@@ -546,7 +558,7 @@ public class FastVLM: Module, VLMModel, KVCacheDimensionProvider {
     public func prepare(_ input: LMInput, cache: [any KVCache], windowSize: Int?) throws
         -> PrepareResult
     {
-        let gridThw = input.image?.imageGridThw
+        let gridThw = input.image?.gridThw
 
         let dtype = DType.float32
         let pixels = input.image?.pixels.asType(dtype)

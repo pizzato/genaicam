@@ -11,6 +11,7 @@ struct SettingsView: View {
     @Binding var mode: DescriptionMode
     @Binding var isRealTime: Bool
     @Binding var showDescription: Bool
+    @Binding var generatorMode: ImageGeneratorMode
     @State private var showWelcome = false
     
     private var appName: String {
@@ -31,6 +32,15 @@ struct SettingsView: View {
                     Picker("Type", selection: $mode) {
                         Text("Short").tag(DescriptionMode.short)
                         Text("Long").tag(DescriptionMode.long)
+                    }
+                    .pickerStyle(.segmented)
+                }
+
+                Section("Generator") {
+                    Picker("Type", selection: $generatorMode) {
+                        ForEach(ImageGeneratorMode.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
                     }
                     .pickerStyle(.segmented)
                 }
@@ -60,5 +70,5 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView(style: .constant(.sketch), mode: .constant(.short), isRealTime: .constant(false), showDescription: .constant(false))
+    SettingsView(style: .constant(.sketch), mode: .constant(.short), isRealTime: .constant(false), showDescription: .constant(false), generatorMode: .constant(.stableDiffusion))
 }

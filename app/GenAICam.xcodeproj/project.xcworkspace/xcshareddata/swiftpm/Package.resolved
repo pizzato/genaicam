@@ -23,8 +23,8 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ml-explore/mlx-swift",
       "state" : {
-        "revision" : "70dbb62128a5a1471a5ab80363430adb33470cab",
-        "version" : "0.21.2"
+        "revision" : "96c0f69cf15f38abd6248bb71fca908171dab1d8",
+        "version" : "0.25.6"
       }
     },
     {
@@ -32,8 +32,17 @@
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/ml-explore/mlx-swift-examples",
       "state" : {
-        "revision" : "6ef303b84ec69e2e1e1da68f2059e99ee1dcef4d",
-        "version" : "2.21.2"
+        "revision" : "24219cd54bdef95f4693f8743264e3d53ffdc12a",
+        "version" : "2.25.6"
+      }
+    },
+    {
+      "identity" : "ml-stable-diffusion",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/apple/ml-stable-diffusion",
+      "state" : {
+        "branch" : "main",
+        "revision" : "e12202c1f6405b83918b58a5d097cd61e3e1f702"
       }
     },
     {

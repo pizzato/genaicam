@@ -3,31 +3,54 @@ import SwiftUI
 struct ModelDownloadView: View {
     @Binding var needsModelDownload: Bool
     @StateObject private var model = FastVLMModel()
+    @StateObject private var sdModel = StableDiffusionGenerator()
     @State private var isDownloading = false
 
     var body: some View {
         VStack(spacing: 20) {
-            Text("On this first run, press Download to get Apple’s FastVLM model (~1.1 GB). This one-time setup enables offline image descriptions and is the only time the app needs internet. Please use Wi-Fi.")
+            Text("Download the required models to enable offline features. This will fetch Apple’s FastVLM (~1.1 GB) for descriptions and the Core ML Stable Diffusion 2.1 model (~4.5 GB) for image generation. Please use Wi‑Fi.")
                 .multilineTextAlignment(.center)
                 .padding()
             if isDownloading {
-                if let progress = model.downloadProgress {
-                    ProgressView(value: progress, total: 1.0)
-                        .progressViewStyle(.linear)
-                        .padding()
-                } else {
-                    ProgressView()
-                        .progressViewStyle(.linear)
-                        .padding()
+                VStack {
+                    VStack {
+                        Text("FastVLM")
+                        if let progress = model.downloadProgress {
+                            ProgressView(value: progress, total: 1.0)
+                                .progressViewStyle(.linear)
+                                .padding()
+                        } else {
+                            ProgressView()
+                                .progressViewStyle(.linear)
+                                .padding()
+                        }
+                        Text(model.modelInfo)
+                    }
+                    VStack {
+                        Text("Stable Diffusion")
+                        if let progress = sdModel.downloadProgress {
+                            ProgressView(value: progress, total: 1.0)
+                                .progressViewStyle(.linear)
+                                .padding()
+                        } else {
+                            ProgressView()
+                                .progressViewStyle(.linear)
+                                .padding()
+                        }
+                        Text(sdModel.status)
+                    }
                 }
-                Text(model.modelInfo)
             } else {
-                Text(model.modelInfo)
-                Button("Download Model") {
+                VStack {
+                    Text("FastVLM: \(model.modelInfo)")
+                    Text("Stable Diffusion: \(sdModel.status)")
+                }
+                Button("Download Models") {
                     isDownloading = true
                     Task {
-                        let success = await model.download()
-                        if success {
+                        let successVLM = await model.download()
+                        let successSD = await sdModel.downloadModel()
+                        if successVLM && successSD {
                             needsModelDownload = false
                         } else {
                             isDownloading = false
