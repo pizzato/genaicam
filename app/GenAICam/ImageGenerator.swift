@@ -26,6 +26,20 @@ class PlaygroundImageGenerator {
     private var creator: ImageCreator?
 
     init() {}
+    /// Check whether Image Playground is available and enabled on this device.
+    /// Attempts to initialize `ImageCreator` and stores it for later use.
+    /// - Returns: `true` if Image Playground can generate images, otherwise `false`.
+    func isImagePlaygroundAvailable() async -> Bool {
+        do {
+            if creator == nil {
+                creator = try await ImageCreator()
+            }
+            return true
+        } catch {
+            creator = nil
+            return false
+        }
+    }
 
     /// Generate a new image based on the provided one using Image Playground.
     /// - Parameters:
@@ -33,26 +47,26 @@ class PlaygroundImageGenerator {
     ///   - style: Desired generation style.
     /// - Returns: Generated image or nil if generation fails.
     func generate(from image: UIImage, style: PlaygroundStyle) async -> UIImage? {
+        guard await isImagePlaygroundAvailable(), let creator, let cgImage = image.cgImage else {
+            return nil
+        }
+
+        let concepts: [ImagePlaygroundConcept] = [.image(cgImage)]
+
+        // Map our simple `PlaygroundStyle` to the corresponding
+        // `ImagePlaygroundStyle`. The ImagePlayground API doesn't expose
+        // a `RawRepresentable` initializer, so we translate explicitly.
+        let playgroundStyle: ImagePlaygroundStyle
+        switch style {
+        case .sketch:
+            playgroundStyle = .sketch
+        case .illustration:
+            playgroundStyle = .illustration
+        case .animation:
+            playgroundStyle = .animation
+        }
+
         do {
-            if creator == nil {
-                creator = try await ImageCreator()
-            }
-            guard let creator, let cgImage = image.cgImage else { return nil }
-            let concepts: [ImagePlaygroundConcept] = [.image(cgImage)]
-
-            // Map our simple `PlaygroundStyle` to the corresponding
-            // `ImagePlaygroundStyle`. The ImagePlayground API doesn't expose
-            // a `RawRepresentable` initializer, so we translate explicitly.
-            let playgroundStyle: ImagePlaygroundStyle
-            switch style {
-            case .sketch:
-                playgroundStyle = .sketch
-            case .illustration:
-                playgroundStyle = .illustration
-            case .animation:
-                playgroundStyle = .animation
-            }
-
             let images = creator.images(for: concepts, style: playgroundStyle, limit: 1)
             for try await result in images {
                 return UIImage(cgImage: result.cgImage)
@@ -69,12 +83,16 @@ class PlaygroundImageGenerator {
 class PlaygroundImageGenerator {
     init() {}
 
+    /// Stub availability check when ImagePlayground is unavailable.
+    /// - Returns: Always `false`.
+    func isImagePlaygroundAvailable() async -> Bool { false }
+
     /// Stub generator when ImagePlayground is unavailable.
     /// - Parameters:
     ///   - image: Source image.
     ///   - style: Desired generation style.
     /// - Returns: Always nil.
-      func generate(from image: UIImage, style: PlaygroundStyle) async -> UIImage? { nil }
+    func generate(from image: UIImage, style: PlaygroundStyle) async -> UIImage? { nil }
 }
 #endif
 #endif
