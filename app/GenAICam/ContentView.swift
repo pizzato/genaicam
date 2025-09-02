@@ -69,7 +69,6 @@ struct ContentView: View {
     @State private var showWelcome: Bool = false
     @State private var previousOutput: String = ""
     @State private var diffedOutput: AttributedString = ""
-    @State private var showPlaygroundWarning = false
 
     var body: some View {
         ZStack {
@@ -185,9 +184,6 @@ struct ContentView: View {
         .task {
             await distributeVideoFrames()
         }
-        .task {
-            await checkPlaygroundAvailability()
-        }
         .onAppear {
             if !hasSeenWelcome {
                 showWelcome = true
@@ -229,16 +225,6 @@ struct ContentView: View {
                 mode: $descriptionMode,
                 isRealTime: $isRealTime,
                 showDescription: $showDescription
-            )
-        }
-        .alert(
-            "Image Playground Unavailable",
-            isPresented: $showPlaygroundWarning
-        ) {
-            Button("OK", role: .cancel) {}
-        } message: {
-            Text(
-                "Apple Image Playground is not installed or enabled. Image generation on device will not work; only image descriptions will be available."
             )
         }
         .onChange(of: isRealTime) { _, newValue in
@@ -383,24 +369,6 @@ struct ContentView: View {
                 )
             }
         }
-#endif
-    }
-
-    @MainActor
-    func checkPlaygroundAvailability() async {
-#if os(iOS)
-#if canImport(ImagePlayground)
-        if #available(iOS 18.0, *) {
-            let available = await imageGenerator.isImagePlaygroundAvailable()
-            if !available {
-                showPlaygroundWarning = true
-            }
-        } else {
-            showPlaygroundWarning = true
-        }
-#else
-        showPlaygroundWarning = true
-#endif
 #endif
     }
 
