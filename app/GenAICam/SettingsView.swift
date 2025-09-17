@@ -8,6 +8,9 @@ import SwiftUI
 struct SettingsView: View {
     @Environment(\.dismiss) private var dismiss
     @Binding var style: PlaygroundStyle
+    @Binding var provider: ImageGeneratorProvider
+    @Binding var stableDiffusionStepCount: Int
+    @Binding var stableDiffusionGuidance: Double
     @Binding var mode: DescriptionMode
     @Binding var isRealTime: Bool
     @Binding var showDescription: Bool
@@ -35,10 +38,34 @@ struct SettingsView: View {
                     .pickerStyle(.segmented)
                 }
 
-                Section("Image Style") {
-                    Picker("Style", selection: $style) {
-                        ForEach(PlaygroundStyle.allCases) { option in
-                            Text(option.rawValue.capitalized).tag(option)
+                Section("Image Generation") {
+                    Picker("Generator", selection: $provider) {
+                        ForEach(ImageGeneratorProvider.allCases) { option in
+                            Text(option.title).tag(option)
+                        }
+                    }
+                    Text(provider.description)
+                        .font(.footnote)
+                        .foregroundStyle(.secondary)
+                        .padding(.vertical, 4)
+
+                    switch provider {
+                    case .imagePlayground:
+                        Picker("Style", selection: $style) {
+                            ForEach(PlaygroundStyle.allCases) { option in
+                                Text(option.rawValue.capitalized).tag(option)
+                            }
+                        }
+                    case .stableDiffusion:
+                        Picker("Steps", selection: $stableDiffusionStepCount) {
+                            ForEach(StableDiffusionStepPreset.allCases) { preset in
+                                Text(preset.label).tag(preset.rawValue)
+                            }
+                        }
+                        Picker("Guidance", selection: $stableDiffusionGuidance) {
+                            ForEach(StableDiffusionGuidancePreset.allCases) { preset in
+                                Text(preset.label).tag(preset.rawValue)
+                            }
                         }
                     }
                 }
@@ -60,5 +87,13 @@ struct SettingsView: View {
 }
 
 #Preview {
-    SettingsView(style: .constant(.sketch), mode: .constant(.short), isRealTime: .constant(false), showDescription: .constant(false))
+    SettingsView(
+        style: .constant(.sketch),
+        provider: .constant(.stableDiffusion),
+        stableDiffusionStepCount: .constant(StableDiffusionStepPreset.balanced.rawValue),
+        stableDiffusionGuidance: .constant(StableDiffusionGuidancePreset.standard.rawValue),
+        mode: .constant(.short),
+        isRealTime: .constant(false),
+        showDescription: .constant(false)
+    )
 }

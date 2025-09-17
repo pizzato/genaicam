@@ -12,10 +12,12 @@ struct PhotoPreviewView: View {
     let image: UIImage
     @Binding var generatedImage: UIImage?
     @Binding var description: String
+    @Binding var generationStatus: String?
     let shortDescription: String
     let longDescription: String
     var onRetake: () -> Void
-    var onRecreate: (PlaygroundStyle?) -> Void
+    var onRecreate: () -> Void
+    var generationOptions: [GenerationOption]
 
     @State private var showShare = false
     @State private var showMore = false
@@ -76,7 +78,7 @@ struct PhotoPreviewView: View {
                         }
 
                         Button {
-                            onRecreate(nil)
+                            onRecreate()
                         } label: {
                             VStack(spacing: 6) {
                                 Image(systemName: "arrow.clockwise")
@@ -94,9 +96,21 @@ struct PhotoPreviewView: View {
                             )
                         }
                         .contextMenu {
-                            ForEach(PlaygroundStyle.allCases) { option in
-                                Button(option.rawValue.capitalized) {
-                                    onRecreate(option)
+                            if generationOptions.isEmpty {
+                                Button("Recreate") { onRecreate() }
+                            } else {
+                                ForEach(generationOptions) { option in
+                                    Button {
+                                        option.action()
+                                    } label: {
+                                        HStack {
+                                            Text(option.title)
+                                            if option.isSelected {
+                                                Spacer()
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -132,7 +146,12 @@ struct PhotoPreviewView: View {
                             Text("Generating image")
                                 .font(.headline)
                                 .foregroundColor(.white)
-                            if !description.isEmpty {
+                            if let status = generationStatus {
+                                Text(status)
+                                    .font(.subheadline)
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                            } else if !description.isEmpty {
                                 Text(description)
                                     .font(.subheadline)
                                     .foregroundColor(.white)
@@ -255,6 +274,13 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+struct GenerationOption: Identifiable {
+    let id: String
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
 }
 
 /// View modifier that applies the appropriate `onChange` variant depending on
