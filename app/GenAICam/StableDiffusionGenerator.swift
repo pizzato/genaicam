@@ -7,7 +7,9 @@ import CoreML
 import Foundation
 #if os(iOS)
 import UIKit
+#if canImport(StableDiffusion)
 import StableDiffusion
+#endif
 
 @available(iOS 17.0, *)
 @MainActor
@@ -25,8 +27,11 @@ final class StableDiffusionGenerator: ObservableObject {
 
     @Published var isGenerating = false
 
-    private var pipeline: StableDiffusionPipeline?
     private var currentTask: Task<UIImage?, Error>?
+
+#if canImport(StableDiffusion)
+    private var pipeline: StableDiffusionPipeline?
+#endif
 
     func generate(
         prompt: String,
@@ -34,22 +39,26 @@ final class StableDiffusionGenerator: ObservableObject {
         guidanceScale: Float,
         progress: @escaping @Sendable (Int, Int) -> Void
     ) async throws -> UIImage? {
+        cancelGeneration()
+        let safeStepCount = max(stepCount, 1)
+        isGenerating = true
+        progress(0, safeStepCount)
+
+#if canImport(StableDiffusion)
         guard StableDiffusionModelManager.modelExists() else {
+            isGenerating = false
             throw GenerationError.modelMissing
         }
 
         let pipeline = try await loadPipeline()
-        cancelGeneration()
-        isGenerating = true
-        progress(0, stepCount)
 
         let task = Task.detached(priority: .userInitiated) { [weak self] () throws -> UIImage? in
             var configuration = StableDiffusionPipeline.Configuration(prompt: prompt)
-            configuration.stepCount = stepCount
+            configuration.stepCount = safeStepCount
             configuration.guidanceScale = guidanceScale
             configuration.seed = UInt32.random(in: 1...UInt32.max)
             configuration.disableSafety = false
-            configuration.schedulerType = .dpmpp2M
+            configuration.schedulerType = .dpmSolverMultistepScheduler
             configuration.useDenoisedIntermediates = true
 
             var lastStep = -1
@@ -77,21 +86,22 @@ final class StableDiffusionGenerator: ObservableObject {
         }
 
         currentTask = task
+
         do {
             let image = try await task.value
-            await MainActor.run {
-                self.isGenerating = false
-                self.currentTask = nil
-            }
+            isGenerating = false
+            currentTask = nil
             return image
         } catch {
-            await MainActor.run {
-                self.isGenerating = false
-                self.currentTask = nil
-            }
+            isGenerating = false
+            currentTask = nil
             if Task.isCancelled { return nil }
             throw error
         }
+#else
+        isGenerating = false
+        throw GenerationError.modelMissing
+#endif
     }
 
     func cancelGeneration() {
@@ -100,6 +110,7 @@ final class StableDiffusionGenerator: ObservableObject {
         isGenerating = false
     }
 
+#if canImport(StableDiffusion)
     private func loadPipeline() async throws -> StableDiffusionPipeline {
         if let pipeline { return pipeline }
 
@@ -117,5 +128,6 @@ final class StableDiffusionGenerator: ObservableObject {
         self.pipeline = pipeline
         return pipeline
     }
+#endif
 }
 #endif
