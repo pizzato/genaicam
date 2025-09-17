@@ -7,9 +7,6 @@ import CoreML
 import Foundation
 #if os(iOS)
 import UIKit
-#if canImport(StableDiffusion)
-import StableDiffusion
-#endif
 
 @available(iOS 17.0, *)
 @MainActor
@@ -28,10 +25,7 @@ final class StableDiffusionGenerator: ObservableObject {
     @Published var isGenerating = false
 
     private var currentTask: Task<UIImage?, Error>?
-
-#if canImport(StableDiffusion)
     private var pipeline: StableDiffusionPipeline?
-#endif
 
     func generate(
         prompt: String,
@@ -44,7 +38,6 @@ final class StableDiffusionGenerator: ObservableObject {
         isGenerating = true
         progress(0, safeStepCount)
 
-#if canImport(StableDiffusion)
         guard StableDiffusionModelManager.modelExists() else {
             isGenerating = false
             throw GenerationError.modelMissing
@@ -67,7 +60,8 @@ final class StableDiffusionGenerator: ObservableObject {
                 if progressInfo.step != lastStep {
                     lastStep = progressInfo.step
                     Task { @MainActor in
-                        progress(progressInfo.step, progressInfo.stepCount)
+                        let current = min(progressInfo.step + 1, progressInfo.stepCount)
+                        progress(current, progressInfo.stepCount)
                         self?.isGenerating = true
                     }
                 }
@@ -98,10 +92,6 @@ final class StableDiffusionGenerator: ObservableObject {
             if Task.isCancelled { return nil }
             throw error
         }
-#else
-        isGenerating = false
-        throw GenerationError.modelMissing
-#endif
     }
 
     func cancelGeneration() {
@@ -110,7 +100,6 @@ final class StableDiffusionGenerator: ObservableObject {
         isGenerating = false
     }
 
-#if canImport(StableDiffusion)
     private func loadPipeline() async throws -> StableDiffusionPipeline {
         if let pipeline { return pipeline }
 
@@ -128,6 +117,5 @@ final class StableDiffusionGenerator: ObservableObject {
         self.pipeline = pipeline
         return pipeline
     }
-#endif
 }
 #endif

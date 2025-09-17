@@ -431,7 +431,11 @@ struct ContentView: View {
                         stepCount: max(stableDiffusionStepPreset(from: self.stableDiffusionStepCount), 1),
                         guidanceScale: Float(self.stableDiffusionGuidance),
                         progress: { step, total in
-                            self.generationStatus = "Step \(max(step, 1)) of \(max(total, 1))"
+                            Task { @MainActor in
+                                let cappedTotal = max(total, 1)
+                                let displayStep = min(max(step, 1), cappedTotal)
+                                self.generationStatus = "Step \(displayStep) of \(cappedTotal)"
+                            }
                         }
                     )
                     await MainActor.run {
