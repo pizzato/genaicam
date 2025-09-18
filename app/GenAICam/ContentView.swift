@@ -384,7 +384,7 @@ struct ContentView: View {
         generatedImage = nil
 
         generationTask = Task {
-            defer { await MainActor.run { self.generationTask = nil } }
+            defer { Task { @MainActor in self.generationTask = nil } }
 
             switch provider {
             case .imagePlayground:
