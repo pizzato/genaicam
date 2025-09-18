@@ -9,6 +9,9 @@ import Foundation
 import UIKit
 
 @available(iOS 17.0, *)
+extension StableDiffusionPipeline: @unchecked Sendable {}
+
+@available(iOS 17.0, *)
 @MainActor
 final class StableDiffusionGenerator: ObservableObject {
     enum GenerationError: LocalizedError {
@@ -37,6 +40,7 @@ final class StableDiffusionGenerator: ObservableObject {
         let safeStepCount = max(stepCount, 1)
         isGenerating = true
         progress(-1, safeStepCount)
+        await Task.yield()
         print("[StableDiffusion] Requested generation with prompt length \(prompt.count), \(safeStepCount) steps, guidance \(guidanceScale).")
 
         guard StableDiffusionModelManager.modelExists() else {
@@ -117,17 +121,21 @@ final class StableDiffusionGenerator: ObservableObject {
         }
 
         let resourcesURL = StableDiffusionModelManager.modelDirectory
-        let configuration = MLModelConfiguration()
-        configuration.computeUnits = .cpuAndNeuralEngine
-        print("[StableDiffusion] Loading pipeline from \(resourcesURL.path) with compute units \(configuration.computeUnits).")
-        let pipeline = try StableDiffusionPipeline(
-            resourcesAt: resourcesURL,
-            controlNet: [],
-            configuration: configuration,
-            disableSafety: false,
-            reduceMemory: true
-        )
-        try pipeline.loadResources()
+        let computeUnits: MLComputeUnits = .cpuAndNeuralEngine
+        print("[StableDiffusion] Loading pipeline from \(resourcesURL.path) with compute units \(computeUnits).")
+        let pipeline = try await Task.detached(priority: .userInitiated) { () throws -> StableDiffusionPipeline in
+            let configuration = MLModelConfiguration()
+            configuration.computeUnits = computeUnits
+            let pipeline = try StableDiffusionPipeline(
+                resourcesAt: resourcesURL,
+                controlNet: [],
+                configuration: configuration,
+                disableSafety: false,
+                reduceMemory: true
+            )
+            try pipeline.loadResources()
+            return pipeline
+        }.value
         print("[StableDiffusion] Pipeline resources loaded into memory.")
         self.pipeline = pipeline
         return pipeline
