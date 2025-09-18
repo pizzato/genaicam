@@ -5,7 +5,6 @@ import Foundation
 import NaturalLanguage
 import CoreML
 
-#if canImport(NaturalLanguage.NLContextualEmbedding)
 @available(iOS 17.0, macOS 14.0, *)
 public struct MultilingualTextEncoder: TextEncoderModel {
     let adapter: ManagedMLModel?
@@ -175,7 +174,6 @@ extension MultilingualTextEncoder {
         }
     }
 }
-#endif
 
 @available(iOS 16.2, macOS 13.1, *)
 public enum Script: String {

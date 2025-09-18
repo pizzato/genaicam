@@ -66,12 +66,11 @@ struct ContentView: View {
     @AppStorage("stableDiffusionPromptSuffix") private var stableDiffusionPromptSuffix: String = "photo, high quality, 8k"
     @StateObject private var stableDiffusionGenerator = StableDiffusionGenerator()
     private static let stableDiffusionLoadingMessage = "Loading Stable Diffusion pipeline. This may take a minute or so..."
+    @AppStorage("playgroundStyle") private var playgroundStyle: PlaygroundStyle = .sketch
 #endif
 #if os(iOS) && canImport(ImagePlayground)
     @available(iOS 18.0, *)
     @State private var imageGenerator = PlaygroundImageGenerator()
-    @available(iOS 18.0, *)
-    @AppStorage("playgroundStyle") private var playgroundStyle: PlaygroundStyle = .sketch
 #endif
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
     @State private var showWelcome: Bool = false
@@ -399,10 +398,8 @@ struct ContentView: View {
         var initialStatus = "Preparing..."
         if provider == .stableDiffusion {
             initialStatus = Self.stableDiffusionLoadingMessage
-#if canImport(ImagePlayground)
         } else if provider == .imagePlayground {
             initialStatus = "Preparing Image Playground..."
-#endif
         }
         generationStatus = initialStatus
         generatedImage = nil
