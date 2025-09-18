@@ -64,6 +64,7 @@ struct ContentView: View {
     @AppStorage("stableDiffusionStepCount") private var stableDiffusionStepCount: Int = StableDiffusionStepPreset.balanced.rawValue
     @AppStorage("stableDiffusionGuidance") private var stableDiffusionGuidance: Double = StableDiffusionGuidancePreset.standard.rawValue
     @StateObject private var stableDiffusionGenerator = StableDiffusionGenerator()
+    private static let stableDiffusionLoadingMessage = "Loading Stable Diffusion pipeline. This may take a minute or so..."
 #endif
 #if os(iOS) && canImport(ImagePlayground)
     @available(iOS 18.0, *)
@@ -149,7 +150,7 @@ struct ContentView: View {
                                     await generateLongDescription(frame)
                                     await MainActor.run {
                                         print("[Capture] Image description ready. Starting Stable Diffusion generation.")
-                                        self.generationStatus = "Starting Stable Diffusion..."
+                                        self.generationStatus = Self.stableDiffusionLoadingMessage
                                         startImageGeneration()
                                     }
                                 }
@@ -393,7 +394,15 @@ struct ContentView: View {
         if #available(iOS 17.0, *) {
             stableDiffusionGenerator.cancelGeneration()
         }
-        generationStatus = "Preparing..."
+        var initialStatus = "Preparing..."
+        if provider == .stableDiffusion {
+            initialStatus = Self.stableDiffusionLoadingMessage
+#if canImport(ImagePlayground)
+        } else if provider == .imagePlayground {
+            initialStatus = "Preparing Image Playground..."
+#endif
+        }
+        generationStatus = initialStatus
         generatedImage = nil
         print("[Generation] Starting new generation using provider \(provider).")
 
@@ -464,11 +473,18 @@ struct ContentView: View {
                         guidanceScale: Float(self.stableDiffusionGuidance),
                         progress: { step, total in
                             let cappedTotal = max(total, 1)
-                            let displayStep = min(max(step, 1), cappedTotal)
-                            DispatchQueue.main.async {
-                                self.generationStatus = "Step \(displayStep) of \(cappedTotal)"
+                            if step <= 0 {
+                                DispatchQueue.main.async {
+                                    self.generationStatus = Self.stableDiffusionLoadingMessage
+                                }
+                                print("[Generation] UI progress update: loading Stable Diffusion pipeline.")
+                            } else {
+                                let displayStep = min(max(step, 1), cappedTotal)
+                                DispatchQueue.main.async {
+                                    self.generationStatus = "Step \(displayStep) of \(cappedTotal)"
+                                }
+                                print("[Generation] UI progress update: step \(displayStep) of \(cappedTotal).")
                             }
-                            print("[Generation] UI progress update: step \(displayStep) of \(cappedTotal).")
                         }
                     )
                     await MainActor.run {

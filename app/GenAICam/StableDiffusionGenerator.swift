@@ -36,7 +36,7 @@ final class StableDiffusionGenerator: ObservableObject {
         cancelGeneration()
         let safeStepCount = max(stepCount, 1)
         isGenerating = true
-        progress(0, safeStepCount)
+        progress(-1, safeStepCount)
         print("[StableDiffusion] Requested generation with prompt length \(prompt.count), \(safeStepCount) steps, guidance \(guidanceScale).")
 
         guard StableDiffusionModelManager.modelExists() else {

@@ -32,10 +32,17 @@ struct PhotoPreviewView: View {
 
     var body: some View {
         GeometryReader { geometry in
+            let showingGenerated = selection == .generated && generatedImage != nil
+            let displayedImage = showingGenerated ? (generatedImage ?? image) : image
+
             ZStack {
-                Image(uiImage: selection == .original ? image : (generatedImage ?? image))
+                Color.black
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .ignoresSafeArea()
+
+                Image(uiImage: displayedImage)
                     .resizable()
-                    .aspectRatio(contentMode: .fill)
+                    .aspectRatio(contentMode: showingGenerated ? .fit : .fill)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped()
 
@@ -142,16 +149,24 @@ struct PhotoPreviewView: View {
                     Spacer()
 
                     if generatedImage == nil {
-                        VStack {
-                            Text("Generating image")
-                                .font(.headline)
-                                .foregroundColor(.white)
+                        VStack(spacing: 8) {
                             if let status = generationStatus {
                                 Text(status)
-                                    .font(.subheadline)
+                                    .font(.headline)
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.center)
                             } else if !description.isEmpty {
+                                Text(description)
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                            } else {
+                                Text("Preparing image...")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                            }
+
+                            if let status = generationStatus, !description.isEmpty {
                                 Text(description)
                                     .font(.subheadline)
                                     .foregroundColor(.white)
