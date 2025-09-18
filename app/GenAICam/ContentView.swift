@@ -430,10 +430,11 @@ struct ContentView: View {
                         prompt: prompt,
                         stepCount: max(stableDiffusionStepPreset(from: self.stableDiffusionStepCount), 1),
                         guidanceScale: Float(self.stableDiffusionGuidance),
-                        progress: { step, total in
-                            Task { @MainActor in
-                                let cappedTotal = max(total, 1)
-                                let displayStep = min(max(step, 1), cappedTotal)
+                        progress: { [weak self] step, total in
+                            guard let self else { return }
+                            let cappedTotal = max(total, 1)
+                            let displayStep = min(max(step, 1), cappedTotal)
+                            DispatchQueue.main.async {
                                 self.generationStatus = "Step \(displayStep) of \(cappedTotal)"
                             }
                         }
