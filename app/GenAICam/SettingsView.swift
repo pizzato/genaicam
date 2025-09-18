@@ -11,6 +11,7 @@ struct SettingsView: View {
     @Binding var provider: ImageGeneratorProvider
     @Binding var stableDiffusionStepCount: Int
     @Binding var stableDiffusionGuidance: Double
+    @Binding var stableDiffusionPromptSuffix: String
     @Binding var mode: DescriptionMode
     @Binding var isRealTime: Bool
     @Binding var showDescription: Bool
@@ -67,6 +68,14 @@ struct SettingsView: View {
                                 Text(preset.label).tag(preset.rawValue)
                             }
                         }
+                        TextField("Additional prompt text", text: $stableDiffusionPromptSuffix)
+#if os(iOS)
+                            .textInputAutocapitalization(.never)
+                            .autocorrectionDisabled()
+#endif
+                        Text("Appended to the long description when generating Stable Diffusion images.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
                     }
                 }
 
@@ -92,6 +101,7 @@ struct SettingsView: View {
         provider: .constant(.stableDiffusion),
         stableDiffusionStepCount: .constant(StableDiffusionStepPreset.balanced.rawValue),
         stableDiffusionGuidance: .constant(StableDiffusionGuidancePreset.standard.rawValue),
+        stableDiffusionPromptSuffix: .constant("photo, high quality, 8k"),
         mode: .constant(.short),
         isRealTime: .constant(false),
         showDescription: .constant(false)

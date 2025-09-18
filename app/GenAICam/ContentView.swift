@@ -63,6 +63,7 @@ struct ContentView: View {
     @AppStorage("imageGeneratorProvider") private var imageGeneratorProvider: ImageGeneratorProvider = .stableDiffusion
     @AppStorage("stableDiffusionStepCount") private var stableDiffusionStepCount: Int = StableDiffusionStepPreset.balanced.rawValue
     @AppStorage("stableDiffusionGuidance") private var stableDiffusionGuidance: Double = StableDiffusionGuidancePreset.standard.rawValue
+    @AppStorage("stableDiffusionPromptSuffix") private var stableDiffusionPromptSuffix: String = "photo, high quality, 8k"
     @StateObject private var stableDiffusionGenerator = StableDiffusionGenerator()
     private static let stableDiffusionLoadingMessage = "Loading Stable Diffusion pipeline. This may take a minute or so..."
 #endif
@@ -231,6 +232,7 @@ struct ContentView: View {
                 provider: $imageGeneratorProvider,
                 stableDiffusionStepCount: $stableDiffusionStepCount,
                 stableDiffusionGuidance: $stableDiffusionGuidance,
+                stableDiffusionPromptSuffix: $stableDiffusionPromptSuffix,
                 mode: $descriptionMode,
                 isRealTime: $isRealTime,
                 showDescription: $showDescription
@@ -444,12 +446,13 @@ struct ContentView: View {
                     return
                 }
 
-                let descriptions = await MainActor.run { () -> (String, String) in
+                let descriptions = await MainActor.run { () -> (String, String, String) in
                     let trimmedLong = self.longDescription.trimmingCharacters(in: .whitespacesAndNewlines)
                     let trimmedShort = self.shortDescription.trimmingCharacters(in: .whitespacesAndNewlines)
-                    return (trimmedLong, trimmedShort)
+                    let promptSuffix = self.stableDiffusionPromptSuffix.trimmingCharacters(in: .whitespacesAndNewlines)
+                    return (trimmedLong, trimmedShort, promptSuffix)
                 }
-                let (trimmedLong, trimmedShort) = descriptions
+                let (trimmedLong, trimmedShort, promptSuffix) = descriptions
                 guard !trimmedLong.isEmpty || !trimmedShort.isEmpty else {
                     await MainActor.run {
                         self.generationStatus = "Waiting for image description..."
@@ -457,7 +460,14 @@ struct ContentView: View {
                     print("[Generation] Stable Diffusion postponed: waiting for description.")
                     return
                 }
-                let prompt = !trimmedLong.isEmpty ? trimmedLong : trimmedShort
+                let basePrompt = !trimmedLong.isEmpty ? trimmedLong : trimmedShort
+                let prompt: String
+                if promptSuffix.isEmpty {
+                    prompt = basePrompt
+                } else {
+                    prompt = "\(basePrompt) \(promptSuffix)"
+                    print("[Generation] Appending Stable Diffusion prompt suffix: \(promptSuffix)")
+                }
 
                 do {
                     print("[Generation] Passing prompt to Stable Diffusion (\(prompt.count) chars).")
