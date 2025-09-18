@@ -383,8 +383,7 @@ struct ContentView: View {
         generationStatus = "Preparing..."
         generatedImage = nil
 
-        generationTask = Task { [weak self] in
-            guard let self else { return }
+        generationTask = Task {
             defer { await MainActor.run { self.generationTask = nil } }
 
             switch provider {
@@ -430,8 +429,7 @@ struct ContentView: View {
                         prompt: prompt,
                         stepCount: max(stableDiffusionStepPreset(from: self.stableDiffusionStepCount), 1),
                         guidanceScale: Float(self.stableDiffusionGuidance),
-                        progress: { [weak self] step, total in
-                            guard let self else { return }
+                        progress: { step, total in
                             let cappedTotal = max(total, 1)
                             let displayStep = min(max(step, 1), cappedTotal)
                             DispatchQueue.main.async {

@@ -13,9 +13,13 @@ public extension Config {
         let data = try Data(contentsOf: fileURL)
         let parsed = try JSONSerialization.jsonObject(with: data, options: [])
         guard var dictionary = parsed as? [String: Any] else { throw Hub.HubClientError.parse }
-        
+
         // Necessary override for loading local tokenizer configs
         dictionary["tokenizer_class"] = "T5Tokenizer"
-        self.init(dictionary)
+        var nsDictionary: [NSString: Any] = [:]
+        for (key, value) in dictionary {
+            nsDictionary[key as NSString] = value
+        }
+        self.init(nsDictionary)
     }
 }
