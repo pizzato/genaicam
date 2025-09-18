@@ -149,35 +149,40 @@ struct PhotoPreviewView: View {
                     Spacer()
 
                     if generatedImage == nil {
-                        VStack(spacing: 8) {
+                        VStack(spacing: 16) {
                             if let status = generationStatus {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(1.2)
                                 Text(status)
                                     .font(.headline)
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.center)
+                                if !description.isEmpty {
+                                    Text(description)
+                                        .font(.subheadline)
+                                        .foregroundColor(.white.opacity(0.9))
+                                        .multilineTextAlignment(.center)
+                                }
                             } else if !description.isEmpty {
                                 Text(description)
                                     .font(.headline)
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.center)
                             } else {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(1.2)
                                 Text("Preparing image...")
                                     .font(.headline)
                                     .foregroundColor(.white)
                             }
-
-                            if let status = generationStatus, !description.isEmpty {
-                                Text(description)
-                                    .font(.subheadline)
-                                    .foregroundColor(.white)
-                                    .multilineTextAlignment(.center)
-                            }
                         }
-                        .padding()
-                        .background(Color.black.opacity(0.6))
-                        .cornerRadius(12)
-                        .padding(.top, 30)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .padding(24)
+                        .background(Color.black.opacity(0.75))
+                        .cornerRadius(18)
+                        .padding(.horizontal, 32)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                     }
 
                     

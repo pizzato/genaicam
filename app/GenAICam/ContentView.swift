@@ -137,15 +137,12 @@ struct ContentView: View {
 #if os(iOS)
                                 cancelImageGeneration()
                                 generatedImage = nil
-                                generationStatus = nil
+                                generationStatus = "Describing image..."
 #endif
                                 showPreview = true
                                 showDescription = true
                                 Task {
-                                    await MainActor.run {
-                                        self.generationStatus = "Describing image..."
-                                        print("[Capture] Waiting for image description before starting generation.")
-                                    }
+                                    print("[Capture] Waiting for image description before starting generation.")
                                     await shortTask.value
                                     await generateLongDescription(frame)
                                     await MainActor.run {
@@ -480,16 +477,18 @@ struct ContentView: View {
                         guidanceScale: Float(self.stableDiffusionGuidance),
                         progress: { step, total in
                             let cappedTotal = max(total, 1)
-                            if step <= 0 {
-                                DispatchQueue.main.async {
+                            Task { @MainActor in
+                                if step <= 0 {
                                     self.generationStatus = Self.stableDiffusionLoadingMessage
+                                } else {
+                                    let displayStep = min(max(step, 1), cappedTotal)
+                                    self.generationStatus = "Step \(displayStep) of \(cappedTotal)"
                                 }
+                            }
+                            if step <= 0 {
                                 print("[Generation] UI progress update: loading Stable Diffusion pipeline.")
                             } else {
                                 let displayStep = min(max(step, 1), cappedTotal)
-                                DispatchQueue.main.async {
-                                    self.generationStatus = "Step \(displayStep) of \(cappedTotal)"
-                                }
                                 print("[Generation] UI progress update: step \(displayStep) of \(cappedTotal).")
                             }
                         }
