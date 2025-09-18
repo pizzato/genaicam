@@ -37,13 +37,16 @@ final class StableDiffusionGenerator: ObservableObject {
         let safeStepCount = max(stepCount, 1)
         isGenerating = true
         progress(0, safeStepCount)
+        print("[StableDiffusion] Requested generation with prompt length \(prompt.count), \(safeStepCount) steps, guidance \(guidanceScale).")
 
         guard StableDiffusionModelManager.modelExists() else {
+            print("[StableDiffusion] Model missing when attempting generation.")
             isGenerating = false
             throw GenerationError.modelMissing
         }
 
         let pipeline = try await loadPipeline()
+        print("[StableDiffusion] Pipeline ready. Launching generation task.")
 
         let task = Task.detached(priority: .userInitiated) { [weak self] () throws -> UIImage? in
             var configuration = StableDiffusionPipeline.Configuration(prompt: prompt)
@@ -64,19 +67,22 @@ final class StableDiffusionGenerator: ObservableObject {
                         progress(current, progressInfo.stepCount)
                         self?.isGenerating = true
                     }
+                    print("[StableDiffusion] Progress: step \(progressInfo.step + 1) of \(progressInfo.stepCount).")
                 }
                 return true
             }
 
             guard let cgImage = images.compactMap({ $0 }).first else {
+                print("[StableDiffusion] Generation completed but no image was produced.")
                 return nil
             }
 
-            #if os(iOS)
+#if os(iOS)
+            print("[StableDiffusion] Generation completed successfully.")
             return UIImage(cgImage: cgImage)
-            #else
+#else
             return nil
-            #endif
+#endif
         }
 
         currentTask = task
@@ -90,22 +96,30 @@ final class StableDiffusionGenerator: ObservableObject {
             isGenerating = false
             currentTask = nil
             if Task.isCancelled { return nil }
+            print("[StableDiffusion] Generation failed: \(error.localizedDescription)")
             throw error
         }
     }
 
     func cancelGeneration() {
+        if currentTask != nil {
+            print("[StableDiffusion] Cancelling active generation task.")
+        }
         currentTask?.cancel()
         currentTask = nil
         isGenerating = false
     }
 
     private func loadPipeline() async throws -> StableDiffusionPipeline {
-        if let pipeline { return pipeline }
+        if let pipeline {
+            print("[StableDiffusion] Reusing cached pipeline instance.")
+            return pipeline
+        }
 
         let resourcesURL = StableDiffusionModelManager.modelDirectory
         let configuration = MLModelConfiguration()
         configuration.computeUnits = .cpuAndNeuralEngine
+        print("[StableDiffusion] Loading pipeline from \(resourcesURL.path) with compute units \(configuration.computeUnits).")
         let pipeline = try StableDiffusionPipeline(
             resourcesAt: resourcesURL,
             controlNet: [],
@@ -114,6 +128,7 @@ final class StableDiffusionGenerator: ObservableObject {
             reduceMemory: true
         )
         try pipeline.loadResources()
+        print("[StableDiffusion] Pipeline resources loaded into memory.")
         self.pipeline = pipeline
         return pipeline
     }
