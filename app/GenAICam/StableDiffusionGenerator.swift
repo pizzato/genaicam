@@ -29,6 +29,23 @@ final class StableDiffusionGenerator: ObservableObject {
 
     private var currentTask: Task<UIImage?, Error>?
     private var pipeline: StableDiffusionPipeline?
+    private let lowMemoryDevice: Bool
+
+    init() {
+#if os(iOS)
+        let physicalMemory = ProcessInfo.processInfo.physicalMemory
+        let gigabyte = 1024.0 * 1024.0 * 1024.0
+        let memoryInGB = Double(physicalMemory) / gigabyte
+        let lowMemoryThreshold = UInt64(8 * 1024 * 1024 * 1024)
+        let isLowMemory = physicalMemory > 0 && physicalMemory < lowMemoryThreshold
+        self.lowMemoryDevice = isLowMemory
+        if isLowMemory {
+            print(String(format: "[StableDiffusion] Low-memory device detected (~%.1f GB). Applying memory optimizations.", memoryInGB))
+        }
+#else
+        self.lowMemoryDevice = false
+#endif
+    }
 
     func generate(
         prompt: String,
@@ -52,12 +69,13 @@ final class StableDiffusionGenerator: ObservableObject {
         let pipeline = try await loadPipeline()
         print("[StableDiffusion] Pipeline ready. Launching generation task.")
 
+        let disableSafety = lowMemoryDevice
         let task = Task.detached(priority: .userInitiated) { [weak self] () throws -> UIImage? in
             var configuration = StableDiffusionPipeline.Configuration(prompt: prompt)
             configuration.stepCount = safeStepCount
             configuration.guidanceScale = guidanceScale
             configuration.seed = UInt32.random(in: 1...UInt32.max)
-            configuration.disableSafety = false
+            configuration.disableSafety = disableSafety
             configuration.schedulerType = .dpmSolverMultistepScheduler
             configuration.useDenoisedIntermediates = true
 
@@ -122,7 +140,15 @@ final class StableDiffusionGenerator: ObservableObject {
 
         let resourcesURL = StableDiffusionModelManager.modelDirectory
         let computeUnits: MLComputeUnits = .cpuAndNeuralEngine
+        let disableSafetyChecker = lowMemoryDevice
+        let shouldPrewarm = !lowMemoryDevice
         print("[StableDiffusion] Loading pipeline from \(resourcesURL.path) with compute units \(computeUnits).")
+        if disableSafetyChecker {
+            print("[StableDiffusion] Safety checker disabled to reduce memory footprint.")
+        }
+        if !shouldPrewarm {
+            print("[StableDiffusion] Skipping pipeline prewarm due to memory constraints.")
+        }
         let pipeline = try await Task.detached(priority: .userInitiated) { () throws -> StableDiffusionPipeline in
             let configuration = MLModelConfiguration()
             configuration.computeUnits = computeUnits
@@ -130,14 +156,20 @@ final class StableDiffusionGenerator: ObservableObject {
                 resourcesAt: resourcesURL,
                 controlNet: [],
                 configuration: configuration,
-                disableSafety: false,
+                disableSafety: disableSafetyChecker,
                 reduceMemory: true
             )
-            try pipeline.loadResources()
+            if shouldPrewarm {
+                try pipeline.loadResources()
+            }
             return pipeline
         }.value
         print("[StableDiffusion] Pipeline resources loaded into memory.")
-        self.pipeline = pipeline
+        if lowMemoryDevice {
+            print("[StableDiffusion] Not caching pipeline to keep memory usage low.")
+        } else {
+            self.pipeline = pipeline
+        }
         return pipeline
     }
 }
