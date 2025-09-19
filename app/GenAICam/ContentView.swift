@@ -58,12 +58,19 @@ struct ContentView: View {
     @State private var showPreview: Bool = false
 #if os(iOS)
     @State private var generatedImage: UIImage?
+    @State private var generationStatus: String?
+    @State private var generationTask: Task<Void, Never>?
+    @AppStorage("imageGeneratorProvider") private var imageGeneratorProvider: ImageGeneratorProvider = .stableDiffusion
+    @AppStorage("stableDiffusionStepCount") private var stableDiffusionStepCount: Int = StableDiffusionStepPreset.balanced.rawValue
+    @AppStorage("stableDiffusionGuidance") private var stableDiffusionGuidance: Double = StableDiffusionGuidancePreset.standard.rawValue
+    @AppStorage("stableDiffusionPromptSuffix") private var stableDiffusionPromptSuffix: String = "photo, high quality, 8k"
+    @StateObject private var stableDiffusionGenerator = StableDiffusionGenerator()
+    private static let stableDiffusionLoadingMessage = "Loading Stable Diffusion pipeline. This may take a minute or so..."
+    @AppStorage("playgroundStyle") private var playgroundStyle: PlaygroundStyle = .sketch
 #endif
 #if os(iOS) && canImport(ImagePlayground)
     @available(iOS 18.0, *)
     @State private var imageGenerator = PlaygroundImageGenerator()
-    @available(iOS 18.0, *)
-    @AppStorage("playgroundStyle") private var playgroundStyle: PlaygroundStyle = .sketch
 #endif
     @AppStorage("hasSeenWelcome") private var hasSeenWelcome = false
     @State private var showWelcome: Bool = false
@@ -128,29 +135,22 @@ struct ContentView: View {
                                 let shortTask = Task { await generateShortDescription(frame) }
                                 capturedImage = makeUIImage(from: frame)
 #if os(iOS)
+                                cancelImageGeneration()
                                 generatedImage = nil
-#endif
-#if os(iOS) && canImport(ImagePlayground)
-                                if #available(iOS 18.0, *), let capturedImage {
-                                    Task {
-                                        generatedImage = await imageGenerator.generate(from: capturedImage, style: playgroundStyle)
-                                        _ = await shortTask.value
-                                        await generateLongDescription(frame)
-                                    }
-                                } else {
-                                    Task {
-                                        _ = await shortTask.value
-                                        await generateLongDescription(frame)
-                                    }
-                                }
-#else
-                                Task {
-                                    _ = await shortTask.value
-                                    await generateLongDescription(frame)
-                                }
+                                generationStatus = "Describing image..."
 #endif
                                 showPreview = true
                                 showDescription = true
+                                Task {
+                                    print("[Capture] Waiting for image description before starting generation.")
+                                    await shortTask.value
+                                    await generateLongDescription(frame)
+                                    await MainActor.run {
+                                        print("[Capture] Image description ready. Starting Stable Diffusion generation.")
+                                        self.generationStatus = Self.stableDiffusionLoadingMessage
+                                        startImageGeneration()
+                                    }
+                                }
                             }
                         } label: {
                             Circle()
@@ -202,17 +202,20 @@ struct ContentView: View {
                             image: capturedImage,
                             generatedImage: $generatedImage,
                             description: $shortDescription,
+                            generationStatus: $generationStatus,
                             shortDescription: shortDescription,
                             longDescription: longDescription,
                             onRetake: {
                                 showPreview = false
                                 model.output = ""
                                 model.cancel()
+                                cancelImageGeneration()
                             },
-                            onRecreate: { style in
-                                recreateImage(style: style)
-        }
-        )
+                            onRecreate: {
+                                startImageGeneration()
+                            },
+                            generationOptions: generationContextMenuItems()
+                        )
             }
         }
 #endif
@@ -222,6 +225,10 @@ struct ContentView: View {
         .sheet(isPresented: $showSettings) {
             SettingsView(
                 style: $playgroundStyle,
+                provider: $imageGeneratorProvider,
+                stableDiffusionStepCount: $stableDiffusionStepCount,
+                stableDiffusionGuidance: $stableDiffusionGuidance,
+                stableDiffusionPromptSuffix: $stableDiffusionPromptSuffix,
                 mode: $descriptionMode,
                 isRealTime: $isRealTime,
                 showDescription: $showDescription
@@ -318,6 +325,7 @@ struct ContentView: View {
     }
 
     func generateShortDescription(_ frame: CVImageBuffer) async {
+        print("[Description] Starting short image description inference.")
         await MainActor.run {
             model.output = ""
             shortDescription = ""
@@ -338,9 +346,11 @@ struct ContentView: View {
             self.shortDescription = shortDesc
             self.model.output = shortDesc
         }
+        print("[Description] Short description ready (\(shortDesc.count) chars).")
     }
 
     func generateLongDescription(_ frame: CVImageBuffer) async {
+        print("[Description] Starting long image description inference.")
         let image = CIImage(cvPixelBuffer: frame)
 
         let longInput = UserInput(
@@ -355,21 +365,202 @@ struct ContentView: View {
             self.longDescription = longDesc
             self.model.output = self.shortDescription
         }
+        print("[Description] Long description ready (\(longDesc.count) chars).")
     }
 
-    func recreateImage(style: PlaygroundStyle? = nil) {
-#if os(iOS) && canImport(ImagePlayground)
-        if #available(iOS 18.0, *), let capturedImage {
-            let chosenStyle = style ?? playgroundStyle
-            Task {
-                generatedImage = nil
-                generatedImage = await imageGenerator.generate(
-                    from: capturedImage,
-                    style: chosenStyle
-                )
+    func cancelImageGeneration() {
+#if os(iOS)
+        if generationTask != nil {
+            print("[Generation] Cancelling UI generation task.")
+        }
+        generationTask?.cancel()
+        generationTask = nil
+        generationStatus = nil
+        if #available(iOS 17.0, *) {
+            stableDiffusionGenerator.cancelGeneration()
+        }
+#endif
+    }
+
+    func startImageGeneration(style: PlaygroundStyle? = nil) {
+#if os(iOS)
+        guard let capturedImage else { return }
+
+        let provider = imageGeneratorProvider
+        let chosenStyle = style ?? playgroundStyle
+        generationTask?.cancel()
+        if #available(iOS 17.0, *) {
+            stableDiffusionGenerator.cancelGeneration()
+        }
+        var initialStatus = "Preparing..."
+        if provider == .stableDiffusion {
+            initialStatus = Self.stableDiffusionLoadingMessage
+        } else if provider == .imagePlayground {
+            initialStatus = "Preparing Image Playground..."
+        }
+        generationStatus = initialStatus
+        generatedImage = nil
+        print("[Generation] Starting new generation using provider \(provider).")
+
+        generationTask = Task {
+            defer { Task { @MainActor in self.generationTask = nil } }
+
+            switch provider {
+            case .imagePlayground:
+#if canImport(ImagePlayground)
+                if #available(iOS 18.0, *) {
+                    print("[Generation] Invoking Image Playground with style \(chosenStyle.rawValue).")
+                    let result = await imageGenerator.generate(
+                        from: capturedImage,
+                        style: chosenStyle
+                    )
+                    await MainActor.run {
+                        self.generatedImage = result
+                        self.generationStatus = result == nil ? "Generation failed" : nil
+                    }
+                } else {
+                    await MainActor.run {
+                        self.generationStatus = "Image Playground requires iOS 18"
+                    }
+                    print("[Generation] Image Playground unavailable on this OS version.")
+                }
+#else
+                await MainActor.run {
+                    self.generationStatus = "Image Playground unavailable"
+                }
+                print("[Generation] Image Playground framework not present.")
+#endif
+
+            case .stableDiffusion:
+                guard #available(iOS 17.0, *) else {
+                    await MainActor.run {
+                        self.generationStatus = "Stable Diffusion requires iOS 17"
+                    }
+                    print("[Generation] Stable Diffusion requested on unsupported OS version.")
+                    return
+                }
+
+                let descriptions = await MainActor.run { () -> (String, String, String) in
+                    let trimmedLong = self.longDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let trimmedShort = self.shortDescription.trimmingCharacters(in: .whitespacesAndNewlines)
+                    let promptSuffix = self.stableDiffusionPromptSuffix.trimmingCharacters(in: .whitespacesAndNewlines)
+                    return (trimmedLong, trimmedShort, promptSuffix)
+                }
+                let (trimmedLong, trimmedShort, promptSuffix) = descriptions
+                guard !trimmedLong.isEmpty || !trimmedShort.isEmpty else {
+                    await MainActor.run {
+                        self.generationStatus = "Waiting for image description..."
+                    }
+                    print("[Generation] Stable Diffusion postponed: waiting for description.")
+                    return
+                }
+                let basePrompt = !trimmedLong.isEmpty ? trimmedLong : trimmedShort
+                let prompt: String
+                if promptSuffix.isEmpty {
+                    prompt = basePrompt
+                } else {
+                    prompt = "\(basePrompt) \(promptSuffix)"
+                    print("[Generation] Appending Stable Diffusion prompt suffix: \(promptSuffix)")
+                }
+
+                do {
+                    print("[Generation] Passing prompt to Stable Diffusion (\(prompt.count) chars).")
+                    let preview = String(prompt.prefix(120))
+                    if preview.count < prompt.count {
+                        print("[Generation] Prompt preview: \(preview)...")
+                    } else {
+                        print("[Generation] Prompt preview: \(preview)")
+                    }
+                    let image = try await stableDiffusionGenerator.generate(
+                        prompt: prompt,
+                        stepCount: max(stableDiffusionStepPreset(from: self.stableDiffusionStepCount), 1),
+                        guidanceScale: Float(self.stableDiffusionGuidance),
+                        progress: { step, total in
+                            let cappedTotal = max(total, 1)
+                            if step <= 0 {
+                                self.generationStatus = Self.stableDiffusionLoadingMessage
+                                print("[Generation] UI progress update: loading Stable Diffusion pipeline.")
+                            } else {
+                                let displayStep = min(max(step, 1), cappedTotal)
+                                self.generationStatus = "Step \(displayStep) of \(cappedTotal)"
+                                print("[Generation] UI progress update: step \(displayStep) of \(cappedTotal).")
+                            }
+                        }
+                    )
+                    await MainActor.run {
+                        self.generatedImage = image
+                        self.generationStatus = image == nil ? "Generation canceled" : nil
+                    }
+                    print("[Generation] Stable Diffusion task finished with image: \(image != nil).")
+                } catch StableDiffusionGenerator.GenerationError.modelMissing {
+                    await MainActor.run {
+                        self.generationStatus = "Download Stable Diffusion from the setup screen"
+                    }
+                    print("[Generation] Stable Diffusion model missing when generation attempted.")
+                } catch {
+                    await MainActor.run {
+                        self.generationStatus = "Generation failed: \(error.localizedDescription)"
+                    }
+                    print("[Generation] Stable Diffusion generation error: \(error.localizedDescription)")
+                }
             }
         }
 #endif
+    }
+
+    func generationContextMenuItems() -> [GenerationOption] {
+#if os(iOS)
+        switch imageGeneratorProvider {
+        case .imagePlayground:
+#if canImport(ImagePlayground)
+            return PlaygroundStyle.allCases.map { style in
+                GenerationOption(
+                    id: "style-\(style.rawValue)",
+                    title: style.rawValue.capitalized,
+                    isSelected: style == playgroundStyle
+                ) {
+                    playgroundStyle = style
+                    startImageGeneration(style: style)
+                }
+            }
+#else
+            return []
+#endif
+        case .stableDiffusion:
+            var items: [GenerationOption] = []
+            for preset in StableDiffusionStepPreset.allCases {
+                items.append(
+                    GenerationOption(
+                        id: "steps-\(preset.rawValue)",
+                        title: preset.label,
+                        isSelected: preset.rawValue == stableDiffusionStepCount
+                    ) {
+                        stableDiffusionStepCount = preset.rawValue
+                        startImageGeneration()
+                    }
+                )
+            }
+            for preset in StableDiffusionGuidancePreset.allCases {
+                items.append(
+                    GenerationOption(
+                        id: "guidance-\(preset.rawValue)",
+                        title: preset.label,
+                        isSelected: preset.rawValue == stableDiffusionGuidance
+                    ) {
+                        stableDiffusionGuidance = preset.rawValue
+                        startImageGeneration()
+                    }
+                )
+            }
+            return items
+        }
+#else
+        return []
+#endif
+    }
+
+    private func stableDiffusionStepPreset(from value: Int) -> Int {
+        StableDiffusionStepPreset(rawValue: value)?.rawValue ?? StableDiffusionStepPreset.balanced.rawValue
     }
 
     func makeUIImage(from buffer: CVImageBuffer) -> UIImage? {

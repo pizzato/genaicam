@@ -12,10 +12,12 @@ struct PhotoPreviewView: View {
     let image: UIImage
     @Binding var generatedImage: UIImage?
     @Binding var description: String
+    @Binding var generationStatus: String?
     let shortDescription: String
     let longDescription: String
     var onRetake: () -> Void
-    var onRecreate: (PlaygroundStyle?) -> Void
+    var onRecreate: () -> Void
+    var generationOptions: [GenerationOption]
 
     @State private var showShare = false
     @State private var showMore = false
@@ -30,10 +32,17 @@ struct PhotoPreviewView: View {
 
     var body: some View {
         GeometryReader { geometry in
+            let showingGenerated = selection == .generated && generatedImage != nil
+            let displayedImage = showingGenerated ? (generatedImage ?? image) : image
+
             ZStack {
-                Image(uiImage: selection == .original ? image : (generatedImage ?? image))
+                Color.black
+                    .frame(width: geometry.size.width, height: geometry.size.height)
+                    .ignoresSafeArea()
+
+                Image(uiImage: displayedImage)
                     .resizable()
-                    .aspectRatio(contentMode: .fill)
+                    .aspectRatio(contentMode: showingGenerated ? .fit : .fill)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped()
 
@@ -76,7 +85,7 @@ struct PhotoPreviewView: View {
                         }
 
                         Button {
-                            onRecreate(nil)
+                            onRecreate()
                         } label: {
                             VStack(spacing: 6) {
                                 Image(systemName: "arrow.clockwise")
@@ -94,9 +103,21 @@ struct PhotoPreviewView: View {
                             )
                         }
                         .contextMenu {
-                            ForEach(PlaygroundStyle.allCases) { option in
-                                Button(option.rawValue.capitalized) {
-                                    onRecreate(option)
+                            if generationOptions.isEmpty {
+                                Button("Recreate") { onRecreate() }
+                            } else {
+                                ForEach(generationOptions) { option in
+                                    Button {
+                                        option.action()
+                                    } label: {
+                                        HStack {
+                                            Text(option.title)
+                                            if option.isSelected {
+                                                Spacer()
+                                                Image(systemName: "checkmark")
+                                            }
+                                        }
+                                    }
                                 }
                             }
                         }
@@ -128,22 +149,40 @@ struct PhotoPreviewView: View {
                     Spacer()
 
                     if generatedImage == nil {
-                        VStack {
-                            Text("Generating image")
-                                .font(.headline)
-                                .foregroundColor(.white)
-                            if !description.isEmpty {
-                                Text(description)
-                                    .font(.subheadline)
+                        VStack(spacing: 16) {
+                            if let status = generationStatus {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(1.2)
+                                Text(status)
+                                    .font(.headline)
                                     .foregroundColor(.white)
                                     .multilineTextAlignment(.center)
+                                if !description.isEmpty {
+                                    Text(description)
+                                        .font(.subheadline)
+                                        .foregroundColor(.white.opacity(0.9))
+                                        .multilineTextAlignment(.center)
+                                }
+                            } else if !description.isEmpty {
+                                Text(description)
+                                    .font(.headline)
+                                    .foregroundColor(.white)
+                                    .multilineTextAlignment(.center)
+                            } else {
+                                ProgressView()
+                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                                    .scaleEffect(1.2)
+                                Text("Preparing image...")
+                                    .font(.headline)
+                                    .foregroundColor(.white)
                             }
                         }
-                        .padding()
-                        .background(Color.black.opacity(0.6))
-                        .cornerRadius(12)
-                        .padding(.top, 30)
-                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
+                        .padding(24)
+                        .background(Color.black.opacity(0.75))
+                        .cornerRadius(18)
+                        .padding(.horizontal, 32)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
                     }
 
                     
@@ -255,6 +294,13 @@ struct ShareSheet: UIViewControllerRepresentable {
     }
 
     func updateUIViewController(_ uiViewController: UIActivityViewController, context: Context) {}
+}
+
+struct GenerationOption: Identifiable {
+    let id: String
+    let title: String
+    let isSelected: Bool
+    let action: () -> Void
 }
 
 /// View modifier that applies the appropriate `onChange` variant depending on

@@ -16,62 +16,6 @@ import ZIPFoundation
 import Combine
 import SwiftUI
 
-// Helper delegate to report download progress roughly once per second
-private final class DownloadDelegate: NSObject, URLSessionDownloadDelegate {
-    var progressHandler: ((Int64, Int64) -> Void)?
-    var destinationURL: URL?
-    private var continuation: CheckedContinuation<Void, Error>?
-    private var session: URLSession?
-    private var lastUpdate = Date.distantPast
-
-    func download(from url: URL, to destinationURL: URL,
-                  progress: @escaping (Int64, Int64) -> Void) async throws {
-        self.destinationURL = destinationURL
-        self.progressHandler = progress
-        let session = URLSession(configuration: .default, delegate: self, delegateQueue: nil)
-        self.session = session
-        try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
-            self.continuation = continuation
-            session.downloadTask(with: url).resume()
-        }
-    }
-
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
-                    didWriteData bytesWritten: Int64, totalBytesWritten: Int64,
-                    totalBytesExpectedToWrite: Int64) {
-        let now = Date()
-        if now.timeIntervalSince(lastUpdate) >= 1 ||
-            totalBytesWritten == totalBytesExpectedToWrite {
-            lastUpdate = now
-            progressHandler?(totalBytesWritten, totalBytesExpectedToWrite)
-        }
-    }
-
-    func urlSession(_ session: URLSession, downloadTask: URLSessionDownloadTask,
-                    didFinishDownloadingTo location: URL) {
-        do {
-            if let dest = destinationURL {
-                let fm = FileManager.default
-                if fm.fileExists(atPath: dest.path) {
-                    try fm.removeItem(at: dest)
-                }
-                try fm.moveItem(at: location, to: dest)
-            }
-            continuation?.resume(returning: ())
-        } catch {
-            continuation?.resume(throwing: error)
-        }
-    }
-
-    func urlSession(_ session: URLSession, task: URLSessionTask,
-                    didCompleteWithError error: Error?) {
-        if let error {
-            continuation?.resume(throwing: error)
-        }
-        session.invalidateAndCancel()
-    }
-}
-
 @MainActor
 class FastVLMModel: ObservableObject {
 
@@ -172,7 +116,7 @@ class FastVLMModel: ObservableObject {
 
         // Download to a file while reporting progress roughly once per second
         let zipURL = tempDir.appendingPathComponent("model.zip")
-        let downloader = DownloadDelegate()
+        let downloader = ModelDownloader()
         try await downloader.download(from: modelDownloadURL, to: zipURL) { received, expected in
             let mb = 1024.0 * 1024.0
             let writtenMB = Double(received) / mb
