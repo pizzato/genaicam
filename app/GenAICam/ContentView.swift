@@ -477,14 +477,22 @@ struct ContentView: View {
                         guidanceScale: Float(self.stableDiffusionGuidance),
                         progress: { step, total in
                             let cappedTotal = max(total, 1)
+                            let statusMessage: String
+                            let logMessage: String
+
                             if step <= 0 {
-                                self.generationStatus = Self.stableDiffusionLoadingMessage
-                                print("[Generation] UI progress update: loading Stable Diffusion pipeline.")
+                                statusMessage = Self.stableDiffusionLoadingMessage
+                                logMessage = "[Generation] UI progress update: loading Stable Diffusion pipeline."
                             } else {
                                 let displayStep = min(max(step, 1), cappedTotal)
-                                self.generationStatus = "Step \(displayStep) of \(cappedTotal)"
-                                print("[Generation] UI progress update: step \(displayStep) of \(cappedTotal).")
+                                statusMessage = "Step \(displayStep) of \(cappedTotal)"
+                                logMessage = "[Generation] UI progress update: step \(displayStep) of \(cappedTotal)."
                             }
+
+                            Task { @MainActor in
+                                self.generationStatus = statusMessage
+                            }
+                            print(logMessage)
                         }
                     )
                     await MainActor.run {
