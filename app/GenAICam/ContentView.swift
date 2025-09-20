@@ -35,6 +35,10 @@ enum DescriptionMode: String, CaseIterable, Identifiable {
 let shortPromptSuffix = "Output is very brief use maximum of 10 words."
 let longPromptSuffix = "Long and detailed description please."
 
+#if os(iOS)
+private let stableDiffusionLoadingMessage = "Loading Stable Diffusion pipeline. This may take a minute or so..."
+#endif
+
 struct ContentView: View {
     @State private var camera = CameraController()
     @StateObject private var model = FastVLMModel()
@@ -65,7 +69,6 @@ struct ContentView: View {
     @AppStorage("stableDiffusionGuidance") private var stableDiffusionGuidance: Double = StableDiffusionGuidancePreset.standard.rawValue
     @AppStorage("stableDiffusionPromptSuffix") private var stableDiffusionPromptSuffix: String = "photo, high quality, 8k"
     @StateObject private var stableDiffusionGenerator = StableDiffusionGenerator()
-    private static let stableDiffusionLoadingMessage = "Loading Stable Diffusion pipeline. This may take a minute or so..."
     @AppStorage("playgroundStyle") private var playgroundStyle: PlaygroundStyle = .sketch
 #endif
 #if os(iOS) && canImport(ImagePlayground)
@@ -147,7 +150,7 @@ struct ContentView: View {
                                     await generateLongDescription(frame)
                                     await MainActor.run {
                                         print("[Capture] Image description ready. Starting Stable Diffusion generation.")
-                                        self.generationStatus = Self.stableDiffusionLoadingMessage
+                                        self.generationStatus = stableDiffusionLoadingMessage
                                         startImageGeneration()
                                     }
                                 }
@@ -394,7 +397,7 @@ struct ContentView: View {
         }
         var initialStatus = "Preparing..."
         if provider == .stableDiffusion {
-            initialStatus = Self.stableDiffusionLoadingMessage
+            initialStatus = stableDiffusionLoadingMessage
         } else if provider == .imagePlayground {
             initialStatus = "Preparing Image Playground..."
         }
@@ -481,7 +484,7 @@ struct ContentView: View {
                             let logMessage: String
 
                             if step <= 0 {
-                                statusMessage = Self.stableDiffusionLoadingMessage
+                                statusMessage = stableDiffusionLoadingMessage
                                 logMessage = "[Generation] UI progress update: loading Stable Diffusion pipeline."
                             } else {
                                 let displayStep = min(max(step, 1), cappedTotal)
