@@ -477,14 +477,22 @@ struct ContentView: View {
                         guidanceScale: Float(self.stableDiffusionGuidance),
                         progress: { step, total in
                             let cappedTotal = max(total, 1)
+                            let statusMessage: String
+                            let logMessage: String
+
                             if step <= 0 {
-                                self.generationStatus = Self.stableDiffusionLoadingMessage
-                                print("[Generation] UI progress update: loading Stable Diffusion pipeline.")
+                                statusMessage = Self.stableDiffusionLoadingMessage
+                                logMessage = "[Generation] UI progress update: loading Stable Diffusion pipeline."
                             } else {
                                 let displayStep = min(max(step, 1), cappedTotal)
-                                self.generationStatus = "Step \(displayStep) of \(cappedTotal)"
-                                print("[Generation] UI progress update: step \(displayStep) of \(cappedTotal).")
+                                statusMessage = "Step \(displayStep) of \(cappedTotal)"
+                                logMessage = "[Generation] UI progress update: step \(displayStep) of \(cappedTotal)."
                             }
+
+                            Task { @MainActor in
+                                self.generationStatus = statusMessage
+                            }
+                            print(logMessage)
                         }
                     )
                     await MainActor.run {
@@ -563,15 +571,41 @@ struct ContentView: View {
         StableDiffusionStepPreset(rawValue: value)?.rawValue ?? StableDiffusionStepPreset.balanced.rawValue
     }
 
-    func makeUIImage(from buffer: CVImageBuffer) -> UIImage? {
-        #if os(iOS)
+    func makeUIImage(from buffer: CVImageBuffer, maxDimension: CGFloat = 1024) -> UIImage? {
+#if os(iOS)
         let ciImage = CIImage(cvPixelBuffer: buffer)
         let context = CIContext()
-        if let cgImage = context.createCGImage(ciImage, from: ciImage.extent) {
-            return UIImage(cgImage: cgImage)
+        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
+            return nil
         }
-        #endif
+
+        let originalImage = UIImage(cgImage: cgImage)
+        let longestSide = max(originalImage.size.width, originalImage.size.height)
+        guard longestSide > 0 else { return originalImage }
+
+        if longestSide <= maxDimension {
+            return originalImage
+        }
+
+        let scale = maxDimension / longestSide
+        let targetSize = CGSize(
+            width: originalImage.size.width * scale,
+            height: originalImage.size.height * scale
+        )
+
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let scaledImage = renderer.image { _ in
+            originalImage.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+        print(String(
+            format: "[Capture] Downscaled captured image to %.0fx%.0f for preview.",
+            Double(targetSize.width),
+            Double(targetSize.height)
+        ))
+        return scaledImage
+#else
         return nil
+#endif
     }
 }
 

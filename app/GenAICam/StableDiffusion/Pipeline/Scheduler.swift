@@ -68,13 +68,27 @@ public extension Scheduler {
         assert(values.allSatisfy({ $0.scalarCount == scalarCount }))
 
         return MLShapedArray(unsafeUninitializedShape: values.first!.shape) { scalars, _ in
-            scalars.initialize(repeating: 0.0)
+            guard let destination = scalars.baseAddress else { return }
+            destination.initialize(repeating: 0, count: scalarCount)
+
             for i in 0 ..< values.count {
-                let w = Float(weights[i])
+                var weight = Float(weights[i])
+                guard weight != 0 else { continue }
+
                 values[i].withUnsafeShapedBufferPointer { buffer, _, _ in
                     assert(buffer.count == scalarCount)
-                    // scalars[j] = w * values[i].scalars[j]
-                    cblas_saxpy(Int32(scalarCount), w, buffer.baseAddress, 1, scalars.baseAddress, 1)
+                    guard let source = buffer.baseAddress else { return }
+
+                    vDSP_vsma(
+                        source,
+                        1,
+                        &weight,
+                        destination,
+                        1,
+                        destination,
+                        1,
+                        vDSP_Length(scalarCount)
+                    )
                 }
             }
         }

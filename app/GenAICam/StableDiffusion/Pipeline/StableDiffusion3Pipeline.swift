@@ -136,7 +136,8 @@ public struct StableDiffusion3Pipeline: StableDiffusionPipelineProtocol {
         var latents: [MLShapedArray<Float32>] = try generateLatentSamples(configuration: config, scheduler: scheduler[0])
 
         // Store denoised latents from scheduler to pass into decoder
-        var denoisedLatents: [MLShapedArray<Float32>] = latents.map { MLShapedArray(converting: $0) }
+        let trackIntermediates = config.useDenoisedIntermediates
+        var denoisedLatents: [MLShapedArray<Float32>] = trackIntermediates ? latents.map { MLShapedArray(converting: $0) } : []
 
         if reduceMemory {
             encoder?.unloadResources()
@@ -180,10 +181,12 @@ public struct StableDiffusion3Pipeline: StableDiffusionPipelineProtocol {
                     sample: latents[i]
                 )
 
-                denoisedLatents[i] = scheduler[i].modelOutputs.last ?? latents[i]
+                if trackIntermediates {
+                    denoisedLatents[i] = scheduler[i].modelOutputs.last ?? latents[i]
+                }
             }
 
-            let currentLatentSamples = config.useDenoisedIntermediates ? denoisedLatents : latents
+            let currentLatentSamples = trackIntermediates ? denoisedLatents : latents
 
             // Report progress
             let progress = Progress(
@@ -207,7 +210,8 @@ public struct StableDiffusion3Pipeline: StableDiffusionPipelineProtocol {
         }
 
         // Decode the latent samples to images
-        return try decodeToImages(denoisedLatents, configuration: config)
+        let latentsForDecoding = trackIntermediates ? denoisedLatents : latents
+        return try decodeToImages(latentsForDecoding, configuration: config)
     }
 
     func encodePrompt(_ prompt: String) throws -> (MLShapedArray<Float32>, MLShapedArray<Float32>) {
