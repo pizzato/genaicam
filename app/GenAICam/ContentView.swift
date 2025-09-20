@@ -65,7 +65,7 @@ struct ContentView: View {
     @AppStorage("stableDiffusionGuidance") private var stableDiffusionGuidance: Double = StableDiffusionGuidancePreset.standard.rawValue
     @AppStorage("stableDiffusionPromptSuffix") private var stableDiffusionPromptSuffix: String = "photo, high quality, 8k"
     @StateObject private var stableDiffusionGenerator = StableDiffusionGenerator()
-    private static let stableDiffusionLoadingMessage = "Loading Stable Diffusion pipeline. This may take a minute or so..."
+    private nonisolated(unsafe) static let stableDiffusionLoadingMessage = "Loading Stable Diffusion pipeline. This may take a minute or so..."
     @AppStorage("playgroundStyle") private var playgroundStyle: PlaygroundStyle = .sketch
 #endif
 #if os(iOS) && canImport(ImagePlayground)
@@ -571,13 +571,38 @@ struct ContentView: View {
         StableDiffusionStepPreset(rawValue: value)?.rawValue ?? StableDiffusionStepPreset.balanced.rawValue
     }
 
-    func makeUIImage(from buffer: CVImageBuffer) -> UIImage? {
+    func makeUIImage(from buffer: CVImageBuffer, maxDimension: CGFloat = 1024) -> UIImage? {
         #if os(iOS)
         let ciImage = CIImage(cvPixelBuffer: buffer)
         let context = CIContext()
-        if let cgImage = context.createCGImage(ciImage, from: ciImage.extent) {
-            return UIImage(cgImage: cgImage)
+        guard let cgImage = context.createCGImage(ciImage, from: ciImage.extent) else {
+            return nil
         }
+
+        let originalImage = UIImage(cgImage: cgImage)
+        let longestSide = max(originalImage.size.width, originalImage.size.height)
+        guard longestSide > 0 else { return originalImage }
+
+        if longestSide <= maxDimension {
+            return originalImage
+        }
+
+        let scale = maxDimension / longestSide
+        let targetSize = CGSize(
+            width: originalImage.size.width * scale,
+            height: originalImage.size.height * scale
+        )
+
+        let renderer = UIGraphicsImageRenderer(size: targetSize)
+        let scaledImage = renderer.image { _ in
+            originalImage.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+        print(String(
+            format: "[Capture] Downscaled captured image to %.0fx%.0f for preview.",
+            Double(targetSize.width),
+            Double(targetSize.height)
+        ))
+        return scaledImage
         #endif
         return nil
     }

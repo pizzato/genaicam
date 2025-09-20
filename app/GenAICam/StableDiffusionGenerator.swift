@@ -30,6 +30,9 @@ final class StableDiffusionGenerator: ObservableObject {
     private var currentTask: Task<UIImage?, Error>?
     private var pipeline: StableDiffusionPipeline?
     private let lowMemoryDevice: Bool
+    #if os(iOS)
+    private var memoryWarningObserver: NSObjectProtocol?
+    #endif
 
     init() {
 #if os(iOS)
@@ -42,8 +45,23 @@ final class StableDiffusionGenerator: ObservableObject {
         if isLowMemory {
             print(String(format: "[StableDiffusion] Low-memory device detected (~%.1f GB). Applying memory optimizations.", memoryInGB))
         }
+        memoryWarningObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didReceiveMemoryWarningNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            self?.handleMemoryWarning()
+        }
 #else
         self.lowMemoryDevice = false
+#endif
+    }
+
+    deinit {
+#if os(iOS)
+        if let observer = memoryWarningObserver {
+            NotificationCenter.default.removeObserver(observer)
+        }
 #endif
     }
 
@@ -70,6 +88,7 @@ final class StableDiffusionGenerator: ObservableObject {
         print("[StableDiffusion] Pipeline ready. Launching generation task.")
 
         let disableSafety = lowMemoryDevice
+        let unloadPipelineAfterUse = lowMemoryDevice
         let task = Task.detached(priority: .userInitiated) { [weak self] () throws -> UIImage? in
             var configuration = StableDiffusionPipeline.Configuration(prompt: prompt)
             configuration.stepCount = safeStepCount
@@ -77,9 +96,14 @@ final class StableDiffusionGenerator: ObservableObject {
             configuration.seed = UInt32.random(in: 1...UInt32.max)
             configuration.disableSafety = disableSafety
             configuration.schedulerType = .dpmSolverMultistepScheduler
-            configuration.useDenoisedIntermediates = true
+            configuration.useDenoisedIntermediates = !unloadPipelineAfterUse
 
             var lastStep = -1
+            defer {
+                if unloadPipelineAfterUse {
+                    pipeline.unloadResources()
+                }
+            }
             let images = try pipeline.generateImages(configuration: configuration) { progressInfo in
                 if Task.isCancelled { return false }
                 if progressInfo.step != lastStep {
@@ -171,6 +195,13 @@ final class StableDiffusionGenerator: ObservableObject {
             self.pipeline = pipeline
         }
         return pipeline
+    }
+
+    private func handleMemoryWarning() {
+        print("[StableDiffusion] Memory warning received. Releasing pipeline resources and cancelling generation.")
+        cancelGeneration()
+        pipeline?.unloadResources()
+        pipeline = nil
     }
 }
 #endif
