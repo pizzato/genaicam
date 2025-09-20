@@ -50,7 +50,9 @@ final class StableDiffusionGenerator: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            self?.handleMemoryWarning()
+            Task { @MainActor [weak self] in
+                self?.handleMemoryWarning()
+            }
         }
 #else
         self.lowMemoryDevice = false
