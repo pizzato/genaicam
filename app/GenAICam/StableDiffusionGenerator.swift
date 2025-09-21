@@ -57,7 +57,7 @@ final class StableDiffusionGenerator: ObservableObject {
             object: nil,
             queue: .main
         ) { [weak self] _ in
-            Task { @MainActor [weak self] in
+            DispatchQueue.main.async { [weak self] in
                 self?.handleMemoryWarning()
             }
         }
@@ -141,11 +141,11 @@ final class StableDiffusionGenerator: ObservableObject {
                     pipeline.unloadResources()
                 }
             }
-            let images = try await pipeline.generateImages(configuration: configuration) { progressInfo in
+            let images = try pipeline.generateImages(configuration: configuration) { progressInfo in
                 if Task.isCancelled { return false }
                 if progressInfo.step != lastStep {
                     lastStep = progressInfo.step
-                    Task { @MainActor in
+                    DispatchQueue.main.async { [weak self] in
                         let current = min(progressInfo.step + 1, progressInfo.stepCount)
                         progress(current, progressInfo.stepCount)
                         self?.isGenerating = true
@@ -315,11 +315,7 @@ final class StableDiffusionGenerator: ObservableObject {
 
         let rendererFormat = UIGraphicsImageRendererFormat()
         rendererFormat.scale = 1
-        if #available(iOS 12.0, *) {
-            rendererFormat.preferredRange = .standard
-        } else {
-            rendererFormat.prefersExtendedRange = false
-        }
+        rendererFormat.preferredRange = .standard
         let renderer = UIGraphicsImageRenderer(size: targetSize, format: rendererFormat)
         let scaledImage = renderer.image { _ in
             imageForResizing.draw(in: CGRect(origin: .zero, size: targetSize))
