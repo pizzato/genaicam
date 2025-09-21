@@ -27,6 +27,13 @@ final class StableDiffusionGenerator: ObservableObject {
 
     @Published var isGenerating = false
 
+    private static let imageToImageStrength: Float = 0.65
+
+    private struct StartingImageConfiguration: @unchecked Sendable {
+        let image: CGImage
+        let strength: Float
+    }
+
     private var currentTask: Task<UIImage?, Error>?
     private var pipeline: StableDiffusionPipeline?
     private let lowMemoryDevice: Bool
@@ -75,6 +82,8 @@ final class StableDiffusionGenerator: ObservableObject {
         prompt: String,
         stepCount: Int,
         guidanceScale: Float,
+        startMode: StableDiffusionStartMode,
+        sourceImage: UIImage?,
         progress: @escaping @Sendable (Int, Int) -> Void
     ) async throws -> UIImage? {
         cancelGeneration()
@@ -93,6 +102,15 @@ final class StableDiffusionGenerator: ObservableObject {
         let pipeline = try await loadPipeline()
         print("[StableDiffusion] Pipeline ready. Launching generation task.")
 
+        let startingConfiguration = startingImageConfiguration(
+            for: pipeline,
+            mode: startMode,
+            sourceImage: sourceImage
+        )
+        if startMode == .photo && startingConfiguration == nil {
+            print("[StableDiffusion] Falling back to noise: unable to prepare starting image.")
+        }
+
         let disableSafety = lowMemoryDevice
         let unloadPipelineAfterUse = lowMemoryDevice
         let task = Task.detached(priority: .userInitiated) { [weak self] () throws -> UIImage? in
@@ -103,6 +121,10 @@ final class StableDiffusionGenerator: ObservableObject {
             configuration.disableSafety = disableSafety
             configuration.schedulerType = .dpmSolverMultistepScheduler
             configuration.useDenoisedIntermediates = !unloadPipelineAfterUse
+            if let startingConfiguration {
+                configuration.startingImage = startingConfiguration.image
+                configuration.strength = startingConfiguration.strength
+            }
 
             var lastStep = -1
             defer {
@@ -208,6 +230,49 @@ final class StableDiffusionGenerator: ObservableObject {
         cancelGeneration()
         pipeline?.unloadResources()
         pipeline = nil
+    }
+
+    private func startingImageConfiguration(
+        for pipeline: StableDiffusionPipeline,
+        mode: StableDiffusionStartMode,
+        sourceImage: UIImage?
+    ) -> StartingImageConfiguration? {
+        guard mode == .photo else { return nil }
+        guard let encoder = pipeline.encoder else {
+            print("[StableDiffusion] Requested image-to-image mode but encoder is unavailable.")
+            return nil
+        }
+        guard let sourceImage else {
+            print("[StableDiffusion] Requested image-to-image mode without a source image.")
+            return nil
+        }
+        let shape = encoder.inputShape
+        guard shape.count == 4 else {
+            print("[StableDiffusion] Unexpected encoder input shape: \(shape).")
+            return nil
+        }
+        let targetWidth = shape[3]
+        let targetHeight = shape[2]
+        let targetSize = CGSize(width: CGFloat(targetWidth), height: CGFloat(targetHeight))
+        guard let preparedImage = resizedCGImage(from: sourceImage, targetSize: targetSize) else {
+            print("[StableDiffusion] Failed to resize source image for encoder input.")
+            return nil
+        }
+        print(
+            "[StableDiffusion] Using captured photo as starting image (resized to \(targetWidth)x\(targetHeight), strength \(Self.imageToImageStrength))."
+        )
+        return StartingImageConfiguration(image: preparedImage, strength: Self.imageToImageStrength)
+    }
+
+    private func resizedCGImage(from image: UIImage, targetSize: CGSize) -> CGImage? {
+        let rendererFormat = UIGraphicsImageRendererFormat()
+        rendererFormat.scale = 1
+        rendererFormat.prefersExtendedRange = false
+        let renderer = UIGraphicsImageRenderer(size: targetSize, format: rendererFormat)
+        let scaledImage = renderer.image { _ in
+            image.draw(in: CGRect(origin: .zero, size: targetSize))
+        }
+        return scaledImage.cgImage
     }
 }
 #endif

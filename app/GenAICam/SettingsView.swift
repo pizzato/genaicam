@@ -12,6 +12,7 @@ struct SettingsView: View {
     @Binding var stableDiffusionStepCount: Int
     @Binding var stableDiffusionGuidance: Double
     @Binding var stableDiffusionPromptSuffix: String
+    @Binding var stableDiffusionStartMode: StableDiffusionStartMode
     @Binding var mode: DescriptionMode
     @Binding var isRealTime: Bool
     @Binding var showDescription: Bool
@@ -80,6 +81,16 @@ struct SettingsView: View {
                                 Text(preset.label).tag(preset.rawValue)
                             }
                         }
+                        Picker("Start from", selection: $stableDiffusionStartMode) {
+                            ForEach(StableDiffusionStartMode.allCases) { mode in
+                                Text(mode.label).tag(mode)
+                            }
+                        }
+                        .pickerStyle(.segmented)
+                        Text(stableDiffusionStartMode.description)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                            .padding(.vertical, 4)
                         TextField("Additional prompt text", text: $stableDiffusionPromptSuffix)
 #if os(iOS)
                             .textInputAutocapitalization(.never)
@@ -114,6 +125,7 @@ struct SettingsView: View {
         stableDiffusionStepCount: .constant(StableDiffusionStepPreset.balanced.rawValue),
         stableDiffusionGuidance: .constant(StableDiffusionGuidancePreset.standard.rawValue),
         stableDiffusionPromptSuffix: .constant("photo, high quality, 8k"),
+        stableDiffusionStartMode: .constant(.noise),
         mode: .constant(.short),
         isRealTime: .constant(false),
         showDescription: .constant(false),

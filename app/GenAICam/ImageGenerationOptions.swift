@@ -70,3 +70,31 @@ enum StableDiffusionGuidancePreset: Double, CaseIterable, Identifiable {
         }
     }
 }
+
+/// Determines how Stable Diffusion should initialize the latent noise.
+enum StableDiffusionStartMode: String, CaseIterable, Identifiable {
+    case noise
+    case photo
+
+    var id: String { rawValue }
+
+    /// Short label used in pickers and menus.
+    var label: String {
+        switch self {
+        case .noise:
+            return "Noise"
+        case .photo:
+            return "Photo"
+        }
+    }
+
+    /// User-facing description of the mode.
+    var description: String {
+        switch self {
+        case .noise:
+            return "Start from random noise for a completely new image."
+        case .photo:
+            return "Use the captured photo as the starting point for image-to-image generation."
+        }
+    }
+}

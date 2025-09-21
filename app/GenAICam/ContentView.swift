@@ -74,6 +74,7 @@ struct ContentView: View {
     @AppStorage("stableDiffusionStepCount") private var stableDiffusionStepCount: Int = StableDiffusionStepPreset.balanced.rawValue
     @AppStorage("stableDiffusionGuidance") private var stableDiffusionGuidance: Double = StableDiffusionGuidancePreset.standard.rawValue
     @AppStorage("stableDiffusionPromptSuffix") private var stableDiffusionPromptSuffix: String = "photo, high quality, 8k"
+    @AppStorage("stableDiffusionStartMode") private var stableDiffusionStartMode: StableDiffusionStartMode = .noise
     @StateObject private var stableDiffusionGenerator = StableDiffusionGenerator()
     @AppStorage("playgroundStyle") private var playgroundStyle: PlaygroundStyle = .sketch
 #endif
@@ -260,6 +261,7 @@ struct ContentView: View {
                 stableDiffusionStepCount: $stableDiffusionStepCount,
                 stableDiffusionGuidance: $stableDiffusionGuidance,
                 stableDiffusionPromptSuffix: $stableDiffusionPromptSuffix,
+                stableDiffusionStartMode: $stableDiffusionStartMode,
                 mode: $descriptionMode,
                 isRealTime: $isRealTime,
                 showDescription: $showDescription,
@@ -497,6 +499,10 @@ struct ContentView: View {
                     return (trimmedLong, trimmedShort, promptSuffix)
                 }
                 let (trimmedLong, trimmedShort, promptSuffix) = descriptions
+                let generationInputs = await MainActor.run { () -> (StableDiffusionStartMode, UIImage?) in
+                    (self.stableDiffusionStartMode, self.capturedImage)
+                }
+                let (startMode, sourceImage) = generationInputs
                 guard !trimmedLong.isEmpty || !trimmedShort.isEmpty else {
                     await MainActor.run {
                         self.generationStatus = "Waiting for image description..."
@@ -525,6 +531,8 @@ struct ContentView: View {
                         prompt: prompt,
                         stepCount: max(stableDiffusionStepPreset(from: self.stableDiffusionStepCount), 1),
                         guidanceScale: Float(self.stableDiffusionGuidance),
+                        startMode: startMode,
+                        sourceImage: sourceImage,
                         progress: { step, total in
                             let cappedTotal = max(total, 1)
                             let statusMessage: String
@@ -618,7 +626,33 @@ struct ContentView: View {
         case .stableDiffusion:
             items.append(
                 GenerationOption(
-                    id: "divider-sd",
+                    id: "divider-sd-start",
+                    title: "",
+                    isSelected: false,
+                    isEnabled: false,
+                    isDivider: true,
+                    action: {}
+                )
+            )
+            let hasCapturedImage = capturedImage != nil
+            for mode in StableDiffusionStartMode.allCases {
+                let isEnabled = mode == .noise || hasCapturedImage
+                items.append(
+                    GenerationOption(
+                        id: "start-\(mode.rawValue)",
+                        title: mode.label,
+                        isSelected: mode == stableDiffusionStartMode,
+                        isEnabled: isEnabled
+                    ) {
+                        guard isEnabled else { return }
+                        stableDiffusionStartMode = mode
+                        startImageGeneration()
+                    }
+                )
+            }
+            items.append(
+                GenerationOption(
+                    id: "divider-sd-steps",
                     title: "",
                     isSelected: false,
                     isEnabled: false,
@@ -638,6 +672,16 @@ struct ContentView: View {
                     }
                 )
             }
+            items.append(
+                GenerationOption(
+                    id: "divider-sd-guidance",
+                    title: "",
+                    isSelected: false,
+                    isEnabled: false,
+                    isDivider: true,
+                    action: {}
+                )
+            )
             for preset in StableDiffusionGuidancePreset.allCases {
                 items.append(
                     GenerationOption(
