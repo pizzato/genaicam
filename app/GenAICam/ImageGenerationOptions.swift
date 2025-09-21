@@ -31,46 +31,6 @@ enum ImageGeneratorProvider: String, CaseIterable, Identifiable {
     }
 }
 
-/// Preset inference step options for Stable Diffusion generation.
-enum StableDiffusionStepPreset: Int, CaseIterable, Identifiable {
-    case fast = 15
-    case balanced = 25
-    case detailed = 35
-
-    var id: Int { rawValue }
-
-    var label: String {
-        switch self {
-        case .fast:
-            return "Fast (15 steps)"
-        case .balanced:
-            return "Balanced (25 steps)"
-        case .detailed:
-            return "Detailed (35 steps)"
-        }
-    }
-}
-
-/// Preset guidance scale options for Stable Diffusion generation.
-enum StableDiffusionGuidancePreset: Double, CaseIterable, Identifiable {
-    case subtle = 5.5
-    case standard = 7.5
-    case vibrant = 9.5
-
-    var id: Double { rawValue }
-
-    var label: String {
-        switch self {
-        case .subtle:
-            return "Subtle (5.5)"
-        case .standard:
-            return "Standard (7.5)"
-        case .vibrant:
-            return "Vibrant (9.5)"
-        }
-    }
-}
-
 /// Determines how Stable Diffusion should initialize the latent noise.
 enum StableDiffusionStartMode: String, CaseIterable, Identifiable {
     case noise

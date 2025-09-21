@@ -27,7 +27,7 @@ final class StableDiffusionGenerator: ObservableObject {
 
     @Published var isGenerating = false
 
-    private static let imageToImageStrength: Float = 0.65
+    private static let defaultNegativePrompt = "ugly, deformed, disfigured, poor details, bad anatomy"
 
     private struct StartingImageConfiguration: @unchecked Sendable {
         let image: CGImage
@@ -83,6 +83,7 @@ final class StableDiffusionGenerator: ObservableObject {
         stepCount: Int,
         guidanceScale: Float,
         startMode: StableDiffusionStartMode,
+        strength: Float,
         sourceImage: UIImage?,
         progress: @escaping @Sendable (Int, Int) -> Void
     ) async throws -> UIImage? {
@@ -91,7 +92,13 @@ final class StableDiffusionGenerator: ObservableObject {
         isGenerating = true
         progress(-1, safeStepCount)
         await Task.yield()
-        print("[StableDiffusion] Requested generation with prompt length \(prompt.count), \(safeStepCount) steps, guidance \(guidanceScale).")
+        let strengthDescription: String
+        if startMode == .photo {
+            strengthDescription = String(format: ", strength %.2f", Double(strength))
+        } else {
+            strengthDescription = ""
+        }
+        print("[StableDiffusion] Requested generation with prompt length \(prompt.count), \(safeStepCount) steps, guidance \(guidanceScale)\(strengthDescription).")
 
         guard StableDiffusionModelManager.modelExists() else {
             print("[StableDiffusion] Model missing when attempting generation.")
@@ -105,6 +112,7 @@ final class StableDiffusionGenerator: ObservableObject {
         let startingConfiguration = startingImageConfiguration(
             for: pipeline,
             mode: startMode,
+            strength: strength,
             sourceImage: sourceImage
         )
         if startMode == .photo && startingConfiguration == nil {
@@ -121,6 +129,7 @@ final class StableDiffusionGenerator: ObservableObject {
             configuration.disableSafety = disableSafety
             configuration.schedulerType = .dpmSolverMultistepScheduler
             configuration.useDenoisedIntermediates = !unloadPipelineAfterUse
+            configuration.negativePrompt = Self.defaultNegativePrompt
             if let startingConfiguration {
                 configuration.startingImage = startingConfiguration.image
                 configuration.strength = startingConfiguration.strength
@@ -235,6 +244,7 @@ final class StableDiffusionGenerator: ObservableObject {
     private func startingImageConfiguration(
         for pipeline: StableDiffusionPipeline,
         mode: StableDiffusionStartMode,
+        strength: Float,
         sourceImage: UIImage?
     ) -> StartingImageConfiguration? {
         guard mode == .photo else { return nil }
@@ -258,10 +268,12 @@ final class StableDiffusionGenerator: ObservableObject {
             print("[StableDiffusion] Failed to resize source image for encoder input.")
             return nil
         }
+        let clampedStrength = max(0.0, min(strength, 1.0))
+        let formattedStrength = String(format: "%.2f", Double(clampedStrength))
         print(
-            "[StableDiffusion] Using captured photo as starting image (resized to \(targetWidth)x\(targetHeight), strength \(Self.imageToImageStrength))."
+            "[StableDiffusion] Using captured photo as starting image (resized to \(targetWidth)x\(targetHeight), strength \(formattedStrength))."
         )
-        return StartingImageConfiguration(image: preparedImage, strength: Self.imageToImageStrength)
+        return StartingImageConfiguration(image: preparedImage, strength: clampedStrength)
     }
 
     private func resizedCGImage(from image: UIImage, targetSize: CGSize) -> CGImage? {
