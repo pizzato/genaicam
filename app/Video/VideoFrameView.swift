@@ -15,6 +15,7 @@ public struct VideoFrameView: View {
     public let frames: AsyncStream<CVImageBuffer>
     public let cameraType: CameraType
     public let action: ((CVImageBuffer) -> Void)?
+    public let isMirrored: Bool
 
     @State private var hold: Bool = false
     @State private var videoFrame: CVImageBuffer?
@@ -37,17 +38,19 @@ public struct VideoFrameView: View {
     public init(
         frames: AsyncStream<CVImageBuffer>,
         cameraType: CameraType,
-        action: ((CVImageBuffer) -> Void)?
+        action: ((CVImageBuffer) -> Void)?,
+        isMirrored: Bool = false
     ) {
         self.frames = frames
         self.cameraType = cameraType
         self.action = action
+        self.isMirrored = isMirrored
     }
 
     public var body: some View {
         Group {
             if let videoFrame {
-                _ImageView(image: videoFrame)
+                _ImageView(image: videoFrame, isMirrored: isMirrored)
                     .overlay(alignment: .bottom) {
                         if cameraType == .single {
                             Button {
@@ -116,15 +119,24 @@ public struct VideoFrameView: View {
 
         let image: Any
         var gravity = CALayerContentsGravity.resizeAspectFill
+        let isMirrored: Bool
 
         func makeUIView(context: Context) -> UIView {
             let view = UIView()
             view.layer.contentsGravity = gravity
+            applyMirroring(to: view)
             return view
         }
 
         func updateUIView(_ uiView: UIView, context: Context) {
             uiView.layer.contents = image
+            uiView.layer.contentsGravity = gravity
+            applyMirroring(to: uiView)
+        }
+
+        private func applyMirroring(to view: UIView) {
+            let transform = isMirrored ? CGAffineTransform(scaleX: -1, y: 1) : .identity
+            view.layer.setAffineTransform(transform)
         }
     }
 #else
@@ -132,16 +144,25 @@ public struct VideoFrameView: View {
 
         let image: Any
         var gravity = CALayerContentsGravity.resizeAspectFill
+        let isMirrored: Bool
 
         func makeNSView(context: Context) -> NSView {
             let view = NSView()
             view.wantsLayer = true
             view.layer?.contentsGravity = gravity
+            applyMirroring(to: view)
             return view
         }
 
         func updateNSView(_ uiView: NSView, context: Context) {
             uiView.layer?.contents = image
+            uiView.layer?.contentsGravity = gravity
+            applyMirroring(to: uiView)
+        }
+
+        private func applyMirroring(to view: NSView) {
+            let transform = isMirrored ? CGAffineTransform(scaleX: -1, y: 1) : .identity
+            view.layer?.setAffineTransform(transform)
         }
     }
 

@@ -92,7 +92,8 @@ struct ContentView: View {
                 VideoFrameView(
                     frames: framesToDisplay,
                     cameraType: .continuous,
-                    action: nil
+                    action: nil,
+                    isMirrored: !camera.backCamera
                 )
                 .ignoresSafeArea()
             } else {
