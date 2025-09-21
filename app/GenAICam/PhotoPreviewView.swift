@@ -41,7 +41,9 @@ struct PhotoPreviewView: View {
     var body: some View {
         GeometryReader { geometry in
             let showingGenerated = selection == .generated && generatedImage != nil
-            let displayedImage = showingGenerated ? (generatedImage ?? image) : image
+            let matchedOriginalImage = generatedImage.flatMap { image.matchingAspectRatio(of: $0) } ?? image
+            let displayedImage = showingGenerated ? (generatedImage ?? matchedOriginalImage) : matchedOriginalImage
+            let contentMode: ContentMode = generatedImage != nil ? .fit : .fill
 
             ZStack {
                 Color.black
@@ -50,7 +52,7 @@ struct PhotoPreviewView: View {
 
                 Image(uiImage: displayedImage)
                     .resizable()
-                    .aspectRatio(contentMode: showingGenerated ? .fit : .fill)
+                    .aspectRatio(contentMode: contentMode)
                     .frame(width: geometry.size.width, height: geometry.size.height)
                     .clipped()
 
@@ -369,6 +371,42 @@ private struct OnChangeModifier: ViewModifier {
                 action(newValue)
             }
         }
+    }
+}
+
+private extension UIImage {
+    func matchingAspectRatio(of targetImage: UIImage) -> UIImage {
+        let targetAspectRatio = targetImage.aspectRatio
+        guard targetAspectRatio > 0,
+              abs(aspectRatio - targetAspectRatio) > 0.001,
+              let cgImage
+        else {
+            return self
+        }
+
+        let originalWidth = CGFloat(cgImage.width)
+        let originalHeight = CGFloat(cgImage.height)
+        guard originalWidth > 0, originalHeight > 0 else { return self }
+
+        var cropRect = CGRect(origin: .zero, size: CGSize(width: originalWidth, height: originalHeight))
+
+        if aspectRatio > targetAspectRatio {
+            let newWidth = originalHeight * targetAspectRatio
+            cropRect.origin.x = (originalWidth - newWidth) / 2.0
+            cropRect.size.width = newWidth
+        } else {
+            let newHeight = originalWidth / targetAspectRatio
+            cropRect.origin.y = (originalHeight - newHeight) / 2.0
+            cropRect.size.height = newHeight
+        }
+
+        guard let croppedCGImage = cgImage.cropping(to: cropRect) else { return self }
+        return UIImage(cgImage: croppedCGImage, scale: scale, orientation: imageOrientation)
+    }
+
+    private var aspectRatio: CGFloat {
+        guard size.height != 0 else { return 0 }
+        return size.width / size.height
     }
 }
 #endif
