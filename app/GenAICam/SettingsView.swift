@@ -111,17 +111,17 @@ struct SettingsView: View {
 
                         VStack(alignment: .leading, spacing: 8) {
                             HStack {
-                                Text("Photo strength")
+                                Text("Photo influence")
                                 Spacer()
                                 Text(String(format: "%.2f", stableDiffusionStrength))
                                     .foregroundStyle(.secondary)
                             }
                             Slider(
                                 value: $stableDiffusionStrength,
-                                in: 0.1...1.0,
+                                in: 0.0...1.0,
                                 step: 0.05
                             )
-                            Text("Controls how strongly the captured photo influences image-to-image results.")
+                            Text("Higher values keep the output closer to the captured photo, while lower values allow the model to diverge.")
                                 .font(.footnote)
                                 .foregroundStyle(.secondary)
                         }

@@ -83,7 +83,7 @@ final class StableDiffusionGenerator: ObservableObject {
         stepCount: Int,
         guidanceScale: Float,
         startMode: StableDiffusionStartMode,
-        strength: Float,
+        photoInfluence: Float,
         sourceImage: UIImage?,
         progress: @escaping @Sendable (Int, Int) -> Void
     ) async throws -> UIImage? {
@@ -92,10 +92,22 @@ final class StableDiffusionGenerator: ObservableObject {
         isGenerating = true
         progress(-1, safeStepCount)
         await Task.yield()
+        let normalizedPhotoInfluence = max(0.0, min(photoInfluence, 1.0))
+        let pipelineStrength: Float?
         let strengthDescription: String
         if startMode == .photo {
-            strengthDescription = String(format: ", strength %.2f", Double(strength))
+            let computedStrength = Self.pipelineStrength(
+                forPhotoInfluence: normalizedPhotoInfluence,
+                stepCount: safeStepCount
+            )
+            pipelineStrength = computedStrength
+            strengthDescription = String(
+                format: ", photo influence %.2f (pipeline strength %.2f)",
+                Double(normalizedPhotoInfluence),
+                Double(computedStrength)
+            )
         } else {
+            pipelineStrength = nil
             strengthDescription = ""
         }
         print("[StableDiffusion] Requested generation with prompt length \(prompt.count), \(safeStepCount) steps, guidance \(guidanceScale)\(strengthDescription).")
@@ -112,7 +124,8 @@ final class StableDiffusionGenerator: ObservableObject {
         let startingConfiguration = startingImageConfiguration(
             for: pipeline,
             mode: startMode,
-            strength: strength,
+            photoInfluence: normalizedPhotoInfluence,
+            strength: pipelineStrength,
             sourceImage: sourceImage
         )
         if startMode == .photo && startingConfiguration == nil {
@@ -243,10 +256,12 @@ final class StableDiffusionGenerator: ObservableObject {
     private func startingImageConfiguration(
         for pipeline: StableDiffusionPipeline,
         mode: StableDiffusionStartMode,
-        strength: Float,
+        photoInfluence: Float,
+        strength: Float?,
         sourceImage: UIImage?
     ) -> StartingImageConfiguration? {
         guard mode == .photo else { return nil }
+        guard let strength else { return nil }
         guard let encoder = pipeline.encoder else {
             print("[StableDiffusion] Requested image-to-image mode but encoder is unavailable.")
             return nil
@@ -267,12 +282,32 @@ final class StableDiffusionGenerator: ObservableObject {
             print("[StableDiffusion] Failed to resize source image for encoder input.")
             return nil
         }
+        let clampedInfluence = max(0.0, min(photoInfluence, 1.0))
         let clampedStrength = max(0.0, min(strength, 1.0))
+        let formattedInfluence = String(format: "%.2f", Double(clampedInfluence))
         let formattedStrength = String(format: "%.2f", Double(clampedStrength))
         print(
-            "[StableDiffusion] Using captured photo as starting image (resized to \(targetWidth)x\(targetHeight), strength \(formattedStrength))."
+            "[StableDiffusion] Using captured photo as starting image (resized to \(targetWidth)x\(targetHeight), photo influence \(formattedInfluence), pipeline strength \(formattedStrength))."
         )
         return StartingImageConfiguration(image: preparedImage, strength: clampedStrength)
+    }
+
+    private static func pipelineStrength(forPhotoInfluence influence: Float, stepCount: Int) -> Float {
+        let clampedInfluence = max(0.0, min(influence, 1.0))
+        let inverted = 1.0 - clampedInfluence
+        let maximumStrength: Float = 0.95
+        let minimumStrengthFromSteps: Float
+        if stepCount > 0 {
+            minimumStrengthFromSteps = 1.0 / Float(stepCount)
+        } else {
+            minimumStrengthFromSteps = 0.01
+        }
+        let minimumStrength = max(minimumStrengthFromSteps, 0.01)
+        let cappedStrength = min(inverted, maximumStrength)
+        if minimumStrength >= maximumStrength {
+            return minimumStrength
+        }
+        return max(cappedStrength, minimumStrength)
     }
 
     private func resizedCGImage(from image: UIImage, targetSize: CGSize) -> CGImage? {

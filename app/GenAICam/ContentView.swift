@@ -552,7 +552,7 @@ struct ContentView: View {
                         stepCount: max(self.stableDiffusionStepCount, 1),
                         guidanceScale: Float(self.stableDiffusionGuidance),
                         startMode: startMode,
-                        strength: Float(self.stableDiffusionStrength),
+                        photoInfluence: Float(self.stableDiffusionStrength),
                         sourceImage: sourceImage,
                         progress: { step, total in
                             let cappedTotal = max(total, 1)
@@ -702,7 +702,7 @@ struct ContentView: View {
             items.append(
                 GenerationOption(
                     id: "strength-info",
-                    title: String(format: "Strength: %.2f", stableDiffusionStrength),
+                    title: String(format: "Photo influence: %.2f", stableDiffusionStrength),
                     isSelected: false,
                     isEnabled: false,
                     action: {}
