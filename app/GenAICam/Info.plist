@@ -6,5 +6,13 @@
         <string>&quot;This app saves photos when requested by the user to the Photo Library&quot;</string>
         <key>ITSAppUsesNonExemptEncryption</key>
         <false/>
+        <key>UISupportedInterfaceOrientations</key>
+        <array>
+                <string>UIInterfaceOrientationPortrait</string>
+        </array>
+        <key>UISupportedInterfaceOrientations~ipad</key>
+        <array>
+                <string>UIInterfaceOrientationPortrait</string>
+        </array>
 </dict>
 </plist>

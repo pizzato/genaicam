@@ -61,6 +61,8 @@ struct ContentView: View {
     @State private var shortDescription: String = ""
     @State private var longDescription: String = ""
     @State private var showSettings: Bool = false
+    @State private var showSettingsAfterPreviewDismiss: Bool = false
+    @State private var reopenPreviewAfterSettings: Bool = false
 
     @State private var isRealTime: Bool = false
     @State private var showDescription: Bool = false
@@ -195,7 +197,7 @@ struct ContentView: View {
                         Spacer()
 
                         Button {
-                            showSettings = true
+                            presentSettings()
                         } label: {
                             Circle()
                                 .fill(Color.black.opacity(0.6))
@@ -269,6 +271,22 @@ struct ContentView: View {
                 showDescription: $showDescription,
                 isImagePlaygroundAvailable: isImagePlaygroundAvailable
             )
+        }
+        .onChange(of: showPreview) { _, isPresented in
+            if !isPresented && showSettingsAfterPreviewDismiss {
+                showSettingsAfterPreviewDismiss = false
+                showSettings = true
+            }
+        }
+        .onChange(of: showSettings) { _, isPresented in
+            if !isPresented {
+                if reopenPreviewAfterSettings, capturedImage != nil {
+                    reopenPreviewAfterSettings = false
+                    showPreview = true
+                } else {
+                    reopenPreviewAfterSettings = false
+                }
+            }
         }
 #if os(iOS)
         .onChange(of: isImagePlaygroundAvailable) { _, _ in
@@ -696,7 +714,7 @@ struct ContentView: View {
                     title: "Adjust in Settings…",
                     isSelected: false
                 ) {
-                    showSettings = true
+                    presentSettings(fromPreview: true)
                 }
             )
         }
@@ -748,6 +766,22 @@ struct ContentView: View {
         return scaledImage
 #else
         return nil
+#endif
+    }
+
+    private func presentSettings(fromPreview: Bool = false) {
+#if os(iOS)
+        if fromPreview && showPreview {
+            showSettingsAfterPreviewDismiss = true
+            reopenPreviewAfterSettings = true
+            showPreview = false
+        } else {
+            reopenPreviewAfterSettings = false
+            showSettingsAfterPreviewDismiss = false
+            showSettings = true
+        }
+#else
+        showSettings = true
 #endif
     }
 }
