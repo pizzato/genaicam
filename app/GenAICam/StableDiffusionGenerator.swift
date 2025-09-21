@@ -277,6 +277,42 @@ final class StableDiffusionGenerator: ObservableObject {
     }
 
     private func resizedCGImage(from image: UIImage, targetSize: CGSize) -> CGImage? {
+        guard targetSize.width > 0, targetSize.height > 0 else {
+            return nil
+        }
+
+        let targetAspectRatio = targetSize.width / targetSize.height
+        var imageForResizing = image
+
+        if targetAspectRatio > 0,
+           let cgImage = image.cgImage {
+            let originalWidth = CGFloat(cgImage.width)
+            let originalHeight = CGFloat(cgImage.height)
+            if originalWidth > 0, originalHeight > 0 {
+                let originalAspectRatio = originalWidth / originalHeight
+                if abs(originalAspectRatio - targetAspectRatio) > 0.001 {
+                    var cropRect = CGRect(origin: .zero, size: CGSize(width: originalWidth, height: originalHeight))
+                    if originalAspectRatio > targetAspectRatio {
+                        let newWidth = originalHeight * targetAspectRatio
+                        cropRect.origin.x = (originalWidth - newWidth) / 2.0
+                        cropRect.size.width = newWidth
+                    } else {
+                        let newHeight = originalWidth / targetAspectRatio
+                        cropRect.origin.y = (originalHeight - newHeight) / 2.0
+                        cropRect.size.height = newHeight
+                    }
+
+                    if let croppedCGImage = cgImage.cropping(to: cropRect) {
+                        imageForResizing = UIImage(
+                            cgImage: croppedCGImage,
+                            scale: image.scale,
+                            orientation: image.imageOrientation
+                        )
+                    }
+                }
+            }
+        }
+
         let rendererFormat = UIGraphicsImageRendererFormat()
         rendererFormat.scale = 1
         if #available(iOS 12.0, *) {
@@ -286,7 +322,7 @@ final class StableDiffusionGenerator: ObservableObject {
         }
         let renderer = UIGraphicsImageRenderer(size: targetSize, format: rendererFormat)
         let scaledImage = renderer.image { _ in
-            image.draw(in: CGRect(origin: .zero, size: targetSize))
+            imageForResizing.draw(in: CGRect(origin: .zero, size: targetSize))
         }
         return scaledImage.cgImage
     }
