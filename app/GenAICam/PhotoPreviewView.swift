@@ -23,6 +23,14 @@ struct PhotoPreviewView: View {
     @State private var showMore = false
     @State private var selection: ImageSelection = .original
     private let buttonSize: CGFloat = 80
+    private static let terminalStatusKeywords: [String] = [
+        "fail",
+        "error",
+        "cancel",
+        "require",
+        "unavailable",
+        "download"
+    ]
 
     enum ImageSelection: String, CaseIterable, Identifiable {
         case original
@@ -156,9 +164,7 @@ struct PhotoPreviewView: View {
                     if generatedImage == nil {
                         VStack(spacing: 16) {
                             if let status = generationStatus {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .scaleEffect(1.2)
+                                statusIndicator(for: status)
                                 Text(status)
                                     .font(.headline)
                                     .foregroundColor(.white)
@@ -276,6 +282,26 @@ struct PhotoPreviewView: View {
                 shortDescription: shortDescription,
                 longDescription: longDescription
             )
+        }
+    }
+
+    private func isTerminalStatus(_ status: String) -> Bool {
+        let normalized = status.lowercased()
+        return Self.terminalStatusKeywords.contains { keyword in
+            normalized.contains(keyword)
+        }
+    }
+
+    @ViewBuilder
+    private func statusIndicator(for status: String) -> some View {
+        if isTerminalStatus(status) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 32, weight: .bold))
+                .foregroundColor(.yellow)
+        } else {
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                .scaleEffect(1.2)
         }
     }
 
