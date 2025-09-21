@@ -121,7 +121,7 @@ final class StableDiffusionGenerator: ObservableObject {
 
         let disableSafety = lowMemoryDevice
         let unloadPipelineAfterUse = lowMemoryDevice
-        let task = Task.detached(priority: .userInitiated) { [weak self] () async throws -> UIImage? in
+        let task = Task.detached(priority: .userInitiated) { () async throws -> UIImage? in
             var configuration = StableDiffusionPipeline.Configuration(prompt: prompt)
             configuration.stepCount = safeStepCount
             configuration.guidanceScale = guidanceScale
@@ -141,14 +141,13 @@ final class StableDiffusionGenerator: ObservableObject {
                     pipeline.unloadResources()
                 }
             }
-            let images = try pipeline.generateImages(configuration: configuration) { progressInfo in
+            let images = try await pipeline.generateImages(configuration: configuration) { progressInfo in
                 if Task.isCancelled { return false }
                 if progressInfo.step != lastStep {
                     lastStep = progressInfo.step
-                    DispatchQueue.main.async { [weak self] in
+                    Task { @MainActor in
                         let current = min(progressInfo.step + 1, progressInfo.stepCount)
                         progress(current, progressInfo.stepCount)
-                        self?.isGenerating = true
                     }
                     print("[StableDiffusion] Progress: step \(progressInfo.step + 1) of \(progressInfo.stepCount).")
                 }
