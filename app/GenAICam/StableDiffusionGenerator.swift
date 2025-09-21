@@ -30,9 +30,9 @@ final class StableDiffusionGenerator: ObservableObject {
     private var currentTask: Task<UIImage?, Error>?
     private var pipeline: StableDiffusionPipeline?
     private let lowMemoryDevice: Bool
-    #if os(iOS)
+#if os(iOS)
     private var memoryWarningObserver: NSObjectProtocol?
-    #endif
+#endif
 
     init() {
 #if os(iOS)
@@ -65,6 +65,10 @@ final class StableDiffusionGenerator: ObservableObject {
             NotificationCenter.default.removeObserver(observer)
         }
 #endif
+    }
+
+    var isLowMemoryDevice: Bool {
+        lowMemoryDevice
     }
 
     func generate(

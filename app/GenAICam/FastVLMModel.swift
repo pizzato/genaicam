@@ -346,7 +346,31 @@ class FastVLMModel: ObservableObject {
         currentTask = task
         return task
     }
-    
+
+    @discardableResult
+    public func unloadForMemoryPressure(
+        reason: String = "Releasing FastVLM resources",
+        logWhenIdle: Bool = false
+    ) -> Bool {
+        currentTask?.cancel()
+        currentTask = nil
+        running = false
+        evaluationState = .idle
+
+        switch loadState {
+        case .idle:
+            if logWhenIdle {
+                print("[FastVLM] \(reason). No cached model to unload.")
+            }
+            return false
+        case .loaded:
+            print("[FastVLM] \(reason). Unloading cached model to free memory.")
+            loadState = .idle
+            modelInfo = "Unloaded to free memory"
+            return true
+        }
+    }
+
     public func cancel() {
         currentTask?.cancel()
         currentTask = nil

@@ -148,9 +148,27 @@ struct ContentView: View {
                                     print("[Capture] Waiting for image description before starting generation.")
                                     await shortTask.value
                                     await generateLongDescription(frame)
+                                    var shouldUnloadFastVLM = false
+#if os(iOS)
+                                    if #available(iOS 17.0, *) {
+                                        let provider = await MainActor.run { self.imageGeneratorProvider }
+                                        if provider == .stableDiffusion {
+                                            shouldUnloadFastVLM = await MainActor.run {
+                                                self.stableDiffusionGenerator.isLowMemoryDevice
+                                            }
+                                        }
+                                    }
+#endif
                                     await MainActor.run {
                                         print("[Capture] Image description ready. Starting Stable Diffusion generation.")
+#if os(iOS)
+                                        if shouldUnloadFastVLM {
+                                            self.model.unloadForMemoryPressure(
+                                                reason: "Preparing Stable Diffusion pipeline after generating descriptions"
+                                            )
+                                        }
                                         self.generationStatus = stableDiffusionLoadingMessage
+#endif
                                         startImageGeneration()
                                     }
                                 }
@@ -397,6 +415,14 @@ struct ContentView: View {
         }
         var initialStatus = "Preparing..."
         if provider == .stableDiffusion {
+            if #available(iOS 17.0, *) {
+                if stableDiffusionGenerator.isLowMemoryDevice {
+                    model.unloadForMemoryPressure(
+                        reason: "Preparing Stable Diffusion generation",
+                        logWhenIdle: false
+                    )
+                }
+            }
             initialStatus = stableDiffusionLoadingMessage
         } else if provider == .imagePlayground {
             initialStatus = "Preparing Image Playground..."
