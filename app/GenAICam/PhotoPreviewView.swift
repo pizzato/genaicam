@@ -23,6 +23,14 @@ struct PhotoPreviewView: View {
     @State private var showMore = false
     @State private var selection: ImageSelection = .original
     private let buttonSize: CGFloat = 80
+    private static let terminalStatusKeywords: [String] = [
+        "fail",
+        "error",
+        "cancel",
+        "require",
+        "unavailable",
+        "download"
+    ]
 
     enum ImageSelection: String, CaseIterable, Identifiable {
         case original
@@ -107,16 +115,21 @@ struct PhotoPreviewView: View {
                                 Button("Recreate") { onRecreate() }
                             } else {
                                 ForEach(generationOptions) { option in
-                                    Button {
-                                        option.action()
-                                    } label: {
-                                        HStack {
-                                            Text(option.title)
-                                            if option.isSelected {
-                                                Spacer()
-                                                Image(systemName: "checkmark")
+                                    if option.isDivider {
+                                        Divider()
+                                    } else {
+                                        Button {
+                                            option.action()
+                                        } label: {
+                                            HStack {
+                                                Text(option.title)
+                                                if option.isSelected {
+                                                    Spacer()
+                                                    Image(systemName: "checkmark")
+                                                }
                                             }
                                         }
+                                        .disabled(!option.isEnabled)
                                     }
                                 }
                             }
@@ -151,9 +164,7 @@ struct PhotoPreviewView: View {
                     if generatedImage == nil {
                         VStack(spacing: 16) {
                             if let status = generationStatus {
-                                ProgressView()
-                                    .progressViewStyle(CircularProgressViewStyle(tint: .white))
-                                    .scaleEffect(1.2)
+                                statusIndicator(for: status)
                                 Text(status)
                                     .font(.headline)
                                     .foregroundColor(.white)
@@ -274,6 +285,26 @@ struct PhotoPreviewView: View {
         }
     }
 
+    private func isTerminalStatus(_ status: String) -> Bool {
+        let normalized = status.lowercased()
+        return Self.terminalStatusKeywords.contains { keyword in
+            normalized.contains(keyword)
+        }
+    }
+
+    @ViewBuilder
+    private func statusIndicator(for status: String) -> some View {
+        if isTerminalStatus(status) {
+            Image(systemName: "exclamationmark.triangle.fill")
+                .font(.system(size: 32, weight: .bold))
+                .foregroundColor(.yellow)
+        } else {
+            ProgressView()
+                .progressViewStyle(CircularProgressViewStyle(tint: .white))
+                .scaleEffect(1.2)
+        }
+    }
+
     func savePhoto() {
         PHPhotoLibrary.requestAuthorization { status in
             if status == .authorized || status == .limited {
@@ -300,7 +331,25 @@ struct GenerationOption: Identifiable {
     let id: String
     let title: String
     let isSelected: Bool
+    let isEnabled: Bool
+    let isDivider: Bool
     let action: () -> Void
+
+    init(
+        id: String,
+        title: String,
+        isSelected: Bool,
+        isEnabled: Bool = true,
+        isDivider: Bool = false,
+        action: @escaping () -> Void
+    ) {
+        self.id = id
+        self.title = title
+        self.isSelected = isSelected
+        self.isEnabled = isEnabled
+        self.isDivider = isDivider
+        self.action = action
+    }
 }
 
 /// View modifier that applies the appropriate `onChange` variant depending on
