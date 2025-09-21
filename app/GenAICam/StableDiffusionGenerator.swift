@@ -121,7 +121,7 @@ final class StableDiffusionGenerator: ObservableObject {
 
         let disableSafety = lowMemoryDevice
         let unloadPipelineAfterUse = lowMemoryDevice
-        let task = Task.detached(priority: .userInitiated) { [weak self] () throws -> UIImage? in
+        let task = Task.detached(priority: .userInitiated) { [weak self] () async throws -> UIImage? in
             var configuration = StableDiffusionPipeline.Configuration(prompt: prompt)
             configuration.stepCount = safeStepCount
             configuration.guidanceScale = guidanceScale
@@ -141,7 +141,7 @@ final class StableDiffusionGenerator: ObservableObject {
                     pipeline.unloadResources()
                 }
             }
-            let images = try pipeline.generateImages(configuration: configuration) { progressInfo in
+            let images = try await pipeline.generateImages(configuration: configuration) { progressInfo in
                 if Task.isCancelled { return false }
                 if progressInfo.step != lastStep {
                     lastStep = progressInfo.step
@@ -279,7 +279,11 @@ final class StableDiffusionGenerator: ObservableObject {
     private func resizedCGImage(from image: UIImage, targetSize: CGSize) -> CGImage? {
         let rendererFormat = UIGraphicsImageRendererFormat()
         rendererFormat.scale = 1
-        rendererFormat.prefersExtendedRange = false
+        if #available(iOS 12.0, *) {
+            rendererFormat.preferredRange = .standard
+        } else {
+            rendererFormat.prefersExtendedRange = false
+        }
         let renderer = UIGraphicsImageRenderer(size: targetSize, format: rendererFormat)
         let scaledImage = renderer.image { _ in
             image.draw(in: CGRect(origin: .zero, size: targetSize))
