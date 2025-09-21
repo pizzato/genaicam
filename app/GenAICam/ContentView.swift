@@ -61,6 +61,8 @@ struct ContentView: View {
     @State private var shortDescription: String = ""
     @State private var longDescription: String = ""
     @State private var showSettings: Bool = false
+    @State private var showSettingsAfterPreviewDismiss: Bool = false
+    @State private var reopenPreviewAfterSettings: Bool = false
 
     @State private var isRealTime: Bool = false
     @State private var showDescription: Bool = false
@@ -71,9 +73,11 @@ struct ContentView: View {
     @State private var generationStatus: String?
     @State private var generationTask: Task<Void, Never>?
     @AppStorage("imageGeneratorProvider") private var imageGeneratorProvider: ImageGeneratorProvider = .stableDiffusion
-    @AppStorage("stableDiffusionStepCount") private var stableDiffusionStepCount: Int = StableDiffusionStepPreset.balanced.rawValue
-    @AppStorage("stableDiffusionGuidance") private var stableDiffusionGuidance: Double = StableDiffusionGuidancePreset.standard.rawValue
+    @AppStorage("stableDiffusionStepCount") private var stableDiffusionStepCount: Int = 25
+    @AppStorage("stableDiffusionGuidance") private var stableDiffusionGuidance: Double = 7.5
+    @AppStorage("stableDiffusionStrength") private var stableDiffusionStrength: Double = 0.5
     @AppStorage("stableDiffusionPromptSuffix") private var stableDiffusionPromptSuffix: String = "photo, high quality, 8k"
+    @AppStorage("stableDiffusionStartMode") private var stableDiffusionStartMode: StableDiffusionStartMode = .photo
     @StateObject private var stableDiffusionGenerator = StableDiffusionGenerator()
     @AppStorage("playgroundStyle") private var playgroundStyle: PlaygroundStyle = .sketch
 #endif
@@ -193,7 +197,7 @@ struct ContentView: View {
                         Spacer()
 
                         Button {
-                            showSettings = true
+                            presentSettings()
                         } label: {
                             Circle()
                                 .fill(Color.black.opacity(0.6))
@@ -259,12 +263,30 @@ struct ContentView: View {
                 provider: $imageGeneratorProvider,
                 stableDiffusionStepCount: $stableDiffusionStepCount,
                 stableDiffusionGuidance: $stableDiffusionGuidance,
+                stableDiffusionStrength: $stableDiffusionStrength,
                 stableDiffusionPromptSuffix: $stableDiffusionPromptSuffix,
+                stableDiffusionStartMode: $stableDiffusionStartMode,
                 mode: $descriptionMode,
                 isRealTime: $isRealTime,
                 showDescription: $showDescription,
                 isImagePlaygroundAvailable: isImagePlaygroundAvailable
             )
+        }
+        .onChange(of: showPreview) { _, isPresented in
+            if !isPresented && showSettingsAfterPreviewDismiss {
+                showSettingsAfterPreviewDismiss = false
+                showSettings = true
+            }
+        }
+        .onChange(of: showSettings) { _, isPresented in
+            if !isPresented {
+                if reopenPreviewAfterSettings, capturedImage != nil {
+                    reopenPreviewAfterSettings = false
+                    showPreview = true
+                } else {
+                    reopenPreviewAfterSettings = false
+                }
+            }
         }
 #if os(iOS)
         .onChange(of: isImagePlaygroundAvailable) { _, _ in
@@ -497,6 +519,10 @@ struct ContentView: View {
                     return (trimmedLong, trimmedShort, promptSuffix)
                 }
                 let (trimmedLong, trimmedShort, promptSuffix) = descriptions
+                let generationInputs = await MainActor.run { () -> (StableDiffusionStartMode, UIImage?) in
+                    (self.stableDiffusionStartMode, self.capturedImage)
+                }
+                let (startMode, sourceImage) = generationInputs
                 guard !trimmedLong.isEmpty || !trimmedShort.isEmpty else {
                     await MainActor.run {
                         self.generationStatus = "Waiting for image description..."
@@ -523,8 +549,11 @@ struct ContentView: View {
                     }
                     let image = try await stableDiffusionGenerator.generate(
                         prompt: prompt,
-                        stepCount: max(stableDiffusionStepPreset(from: self.stableDiffusionStepCount), 1),
+                        stepCount: max(self.stableDiffusionStepCount, 1),
                         guidanceScale: Float(self.stableDiffusionGuidance),
+                        startMode: startMode,
+                        photoInfluence: Float(self.stableDiffusionStrength),
+                        sourceImage: sourceImage,
                         progress: { step, total in
                             let cappedTotal = max(total, 1)
                             let statusMessage: String
@@ -618,7 +647,7 @@ struct ContentView: View {
         case .stableDiffusion:
             items.append(
                 GenerationOption(
-                    id: "divider-sd",
+                    id: "divider-sd-start",
                     title: "",
                     isSelected: false,
                     isEnabled: false,
@@ -626,30 +655,68 @@ struct ContentView: View {
                     action: {}
                 )
             )
-            for preset in StableDiffusionStepPreset.allCases {
+            let hasCapturedImage = capturedImage != nil
+            for mode in StableDiffusionStartMode.allCases {
+                let isEnabled = mode == .noise || hasCapturedImage
                 items.append(
                     GenerationOption(
-                        id: "steps-\(preset.rawValue)",
-                        title: preset.label,
-                        isSelected: preset.rawValue == stableDiffusionStepCount
+                        id: "start-\(mode.rawValue)",
+                        title: mode.label,
+                        isSelected: mode == stableDiffusionStartMode,
+                        isEnabled: isEnabled
                     ) {
-                        stableDiffusionStepCount = preset.rawValue
+                        guard isEnabled else { return }
+                        stableDiffusionStartMode = mode
                         startImageGeneration()
                     }
                 )
             }
-            for preset in StableDiffusionGuidancePreset.allCases {
-                items.append(
-                    GenerationOption(
-                        id: "guidance-\(preset.rawValue)",
-                        title: preset.label,
-                        isSelected: preset.rawValue == stableDiffusionGuidance
-                    ) {
-                        stableDiffusionGuidance = preset.rawValue
-                        startImageGeneration()
-                    }
+            items.append(
+                GenerationOption(
+                    id: "divider-sd-values",
+                    title: "",
+                    isSelected: false,
+                    isEnabled: false,
+                    isDivider: true,
+                    action: {}
                 )
-            }
+            )
+            items.append(
+                GenerationOption(
+                    id: "steps-info",
+                    title: "Steps: \(stableDiffusionStepCount)",
+                    isSelected: false,
+                    isEnabled: false,
+                    action: {}
+                )
+            )
+            items.append(
+                GenerationOption(
+                    id: "guidance-info",
+                    title: String(format: "Guidance: %.1f", stableDiffusionGuidance),
+                    isSelected: false,
+                    isEnabled: false,
+                    action: {}
+                )
+            )
+            items.append(
+                GenerationOption(
+                    id: "strength-info",
+                    title: String(format: "Photo influence: %.2f", stableDiffusionStrength),
+                    isSelected: false,
+                    isEnabled: false,
+                    action: {}
+                )
+            )
+            items.append(
+                GenerationOption(
+                    id: "open-settings",
+                    title: "Adjust in Settings…",
+                    isSelected: false
+                ) {
+                    presentSettings(fromPreview: true)
+                }
+            )
         }
         return items
 #else
@@ -664,10 +731,6 @@ struct ContentView: View {
         }
     }
 #endif
-
-    private func stableDiffusionStepPreset(from value: Int) -> Int {
-        StableDiffusionStepPreset(rawValue: value)?.rawValue ?? StableDiffusionStepPreset.balanced.rawValue
-    }
 
     func makeUIImage(from buffer: CVImageBuffer, maxDimension: CGFloat = 1024) -> UIImage? {
 #if os(iOS)
@@ -703,6 +766,22 @@ struct ContentView: View {
         return scaledImage
 #else
         return nil
+#endif
+    }
+
+    private func presentSettings(fromPreview: Bool = false) {
+#if os(iOS)
+        if fromPreview && showPreview {
+            showSettingsAfterPreviewDismiss = true
+            reopenPreviewAfterSettings = true
+            showPreview = false
+        } else {
+            reopenPreviewAfterSettings = false
+            showSettingsAfterPreviewDismiss = false
+            showSettings = true
+        }
+#else
+        showSettings = true
 #endif
     }
 }

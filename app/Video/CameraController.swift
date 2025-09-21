@@ -34,8 +34,9 @@ public class CameraController: NSObject {
     private var permissionGranted = true
     private var captureSession: AVCaptureSession?
     private let sessionQueue = DispatchQueue(label: "sessionQueue")
-    @objc dynamic private var rotationCoordinator : AVCaptureDevice.RotationCoordinator?
-    private var rotationObservation: NSKeyValueObservation?
+    #if os(iOS)
+    private let lockedVideoRotationAngle: CGFloat = 90
+    #endif
 
     public func attach(continuation: AsyncStream<CMSampleBuffer>.Continuation) {
         sessionQueue.async {
@@ -69,32 +70,6 @@ public class CameraController: NSObject {
     }
 
     #if os(iOS)
-        private func setOrientation(_ orientation: UIDeviceOrientation) {
-            guard let captureSession else { return }
-
-            let angle: Double?
-            switch orientation {
-            case .unknown, .faceDown:
-                angle = nil
-            case .portrait, .faceUp:
-                angle = 90
-            case .portraitUpsideDown:
-                angle = 270
-            case .landscapeLeft:
-                angle = 0
-            case .landscapeRight:
-                angle = 180
-            @unknown default:
-                angle = nil
-            }
-
-            if let angle {
-                for output in captureSession.outputs {
-                    output.connection(with: .video)?.videoRotationAngle = angle
-                }
-            }
-        }
-    
     private func updateRotation(rotation : CGFloat) {
         guard let captureSession else { return }
         for output in captureSession.outputs {
@@ -180,12 +155,7 @@ public class CameraController: NSObject {
         captureSession.sessionPreset = AVCaptureSession.Preset.hd1920x1080
 
         #if os(iOS)
-        rotationCoordinator = AVCaptureDevice.RotationCoordinator(device: videoDevice, previewLayer: nil)
-        rotationObservation = observe(\.rotationCoordinator!.videoRotationAngleForHorizonLevelCapture, options: [.initial, .new]) { [weak self] _, change in
-            if let nv = change.newValue {
-                self?.updateRotation(rotation: nv)
-            }
-        }
+        updateRotation(rotation: lockedVideoRotationAngle)
         #endif
     }
 }
