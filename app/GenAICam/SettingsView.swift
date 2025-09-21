@@ -16,6 +16,7 @@ struct SettingsView: View {
     @Binding var isRealTime: Bool
     @Binding var showDescription: Bool
     @State private var showWelcome = false
+    let isImagePlaygroundAvailable: Bool
     
     private var appName: String {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleName") as? String ?? "GenAICam"
@@ -42,7 +43,10 @@ struct SettingsView: View {
                 Section("Image Generation") {
                     Picker("Generator", selection: $provider) {
                         ForEach(ImageGeneratorProvider.allCases) { option in
-                            Text(option.title).tag(option)
+                            Text(option.title)
+                                .tag(option)
+                                .foregroundStyle(option == .imagePlayground && !isImagePlaygroundAvailable ? .secondary : .primary)
+                                .disabled(option == .imagePlayground && !isImagePlaygroundAvailable)
                         }
                     }
                     Text(provider.description)
@@ -50,11 +54,19 @@ struct SettingsView: View {
                         .foregroundStyle(.secondary)
                         .padding(.vertical, 4)
 
+                    if !isImagePlaygroundAvailable {
+                        Text("Image Playground is not available on this device.")
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                    }
+
                     switch provider {
                     case .imagePlayground:
-                        Picker("Style", selection: $style) {
-                            ForEach(PlaygroundStyle.allCases) { option in
-                                Text(option.rawValue.capitalized).tag(option)
+                        if isImagePlaygroundAvailable {
+                            Picker("Style", selection: $style) {
+                                ForEach(PlaygroundStyle.allCases) { option in
+                                    Text(option.rawValue.capitalized).tag(option)
+                                }
                             }
                         }
                     case .stableDiffusion:
@@ -104,6 +116,7 @@ struct SettingsView: View {
         stableDiffusionPromptSuffix: .constant("photo, high quality, 8k"),
         mode: .constant(.short),
         isRealTime: .constant(false),
-        showDescription: .constant(false)
+        showDescription: .constant(false),
+        isImagePlaygroundAvailable: true
     )
 }

@@ -40,6 +40,12 @@ private let stableDiffusionLoadingMessage = "Loading Stable Diffusion pipeline. 
 #endif
 
 struct ContentView: View {
+    let isImagePlaygroundAvailable: Bool
+
+    init(isImagePlaygroundAvailable: Bool = true) {
+        self.isImagePlaygroundAvailable = isImagePlaygroundAvailable
+    }
+
     @State private var camera = CameraController()
     @StateObject private var model = FastVLMModel()
 
@@ -209,6 +215,9 @@ struct ContentView: View {
             if !hasSeenWelcome {
                 showWelcome = true
             }
+#if os(iOS)
+            enforceImageGeneratorAvailability()
+#endif
         }
         #if os(iOS)
         .onAppear {
@@ -252,9 +261,15 @@ struct ContentView: View {
                 stableDiffusionPromptSuffix: $stableDiffusionPromptSuffix,
                 mode: $descriptionMode,
                 isRealTime: $isRealTime,
-                showDescription: $showDescription
+                showDescription: $showDescription,
+                isImagePlaygroundAvailable: isImagePlaygroundAvailable
             )
         }
+#if os(iOS)
+        .onChange(of: isImagePlaygroundAvailable) { _, _ in
+            enforceImageGeneratorAvailability()
+        }
+#endif
         .onChange(of: isRealTime) { _, newValue in
             showDescription = newValue
             model.cancel()
@@ -407,7 +422,12 @@ struct ContentView: View {
 #if os(iOS)
         guard let capturedImage else { return }
 
-        let provider = imageGeneratorProvider
+        var provider = imageGeneratorProvider
+        if provider == .imagePlayground && !isImagePlaygroundAvailable {
+            print("[Generation] Image Playground selected while unavailable; falling back to Stable Diffusion.")
+            provider = .stableDiffusion
+            imageGeneratorProvider = .stableDiffusion
+        }
         let chosenStyle = style ?? playgroundStyle
         generationTask?.cancel()
         if #available(iOS 17.0, *) {
@@ -547,10 +567,43 @@ struct ContentView: View {
 
     func generationContextMenuItems() -> [GenerationOption] {
 #if os(iOS)
+        var items: [GenerationOption] = []
+
+        for provider in ImageGeneratorProvider.allCases {
+            let isEnabled = provider == .stableDiffusion || isImagePlaygroundAvailable
+            items.append(
+                GenerationOption(
+                    id: "provider-\(provider.rawValue)",
+                    title: provider.title,
+                    isSelected: provider == imageGeneratorProvider,
+                    isEnabled: isEnabled
+                ) {
+                    guard isEnabled else { return }
+                    imageGeneratorProvider = provider
+                    switch provider {
+                    case .stableDiffusion:
+                        startImageGeneration()
+                    case .imagePlayground:
+                        startImageGeneration(style: playgroundStyle)
+                    }
+                }
+            )
+        }
+
         switch imageGeneratorProvider {
         case .imagePlayground:
 #if canImport(ImagePlayground)
-            return PlaygroundStyle.allCases.map { style in
+            items.append(
+                GenerationOption(
+                    id: "divider-playground",
+                    title: "",
+                    isSelected: false,
+                    isEnabled: false,
+                    isDivider: true,
+                    action: {}
+                )
+            )
+            items.append(contentsOf: PlaygroundStyle.allCases.map { style in
                 GenerationOption(
                     id: "style-\(style.rawValue)",
                     title: style.rawValue.capitalized,
@@ -559,12 +612,19 @@ struct ContentView: View {
                     playgroundStyle = style
                     startImageGeneration(style: style)
                 }
-            }
-#else
-            return []
+            })
 #endif
         case .stableDiffusion:
-            var items: [GenerationOption] = []
+            items.append(
+                GenerationOption(
+                    id: "divider-sd",
+                    title: "",
+                    isSelected: false,
+                    isEnabled: false,
+                    isDivider: true,
+                    action: {}
+                )
+            )
             for preset in StableDiffusionStepPreset.allCases {
                 items.append(
                     GenerationOption(
@@ -589,12 +649,20 @@ struct ContentView: View {
                     }
                 )
             }
-            return items
         }
+        return items
 #else
         return []
 #endif
     }
+
+#if os(iOS)
+    private func enforceImageGeneratorAvailability() {
+        if !isImagePlaygroundAvailable && imageGeneratorProvider == .imagePlayground {
+            imageGeneratorProvider = .stableDiffusion
+        }
+    }
+#endif
 
     private func stableDiffusionStepPreset(from value: Int) -> Int {
         StableDiffusionStepPreset(rawValue: value)?.rawValue ?? StableDiffusionStepPreset.balanced.rawValue

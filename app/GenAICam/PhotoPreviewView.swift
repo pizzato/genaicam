@@ -107,16 +107,21 @@ struct PhotoPreviewView: View {
                                 Button("Recreate") { onRecreate() }
                             } else {
                                 ForEach(generationOptions) { option in
-                                    Button {
-                                        option.action()
-                                    } label: {
-                                        HStack {
-                                            Text(option.title)
-                                            if option.isSelected {
-                                                Spacer()
-                                                Image(systemName: "checkmark")
+                                    if option.isDivider {
+                                        Divider()
+                                    } else {
+                                        Button {
+                                            option.action()
+                                        } label: {
+                                            HStack {
+                                                Text(option.title)
+                                                if option.isSelected {
+                                                    Spacer()
+                                                    Image(systemName: "checkmark")
+                                                }
                                             }
                                         }
+                                        .disabled(!option.isEnabled)
                                     }
                                 }
                             }
@@ -300,7 +305,25 @@ struct GenerationOption: Identifiable {
     let id: String
     let title: String
     let isSelected: Bool
+    let isEnabled: Bool
+    let isDivider: Bool
     let action: () -> Void
+
+    init(
+        id: String,
+        title: String,
+        isSelected: Bool,
+        isEnabled: Bool = true,
+        isDivider: Bool = false,
+        action: @escaping () -> Void
+    ) {
+        self.id = id
+        self.title = title
+        self.isSelected = isSelected
+        self.isEnabled = isEnabled
+        self.isDivider = isDivider
+        self.action = action
+    }
 }
 
 /// View modifier that applies the appropriate `onChange` variant depending on

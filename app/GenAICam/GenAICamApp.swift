@@ -8,7 +8,9 @@ import SwiftUI
 @main
 struct GenAICamApp: App {
     @State private var needsModelDownload = !(FastVLMModel.modelExists() && StableDiffusionModelManager.modelExists())
-    @State private var showPlaygroundWarning = false
+#if os(iOS)
+    @State private var isImagePlaygroundAvailable = false
+#endif
 
     var body: some Scene {
         WindowGroup {
@@ -16,23 +18,17 @@ struct GenAICamApp: App {
                 if needsModelDownload {
                     ModelDownloadView(needsModelDownload: $needsModelDownload)
                 } else {
+#if os(iOS)
+                    ContentView(isImagePlaygroundAvailable: isImagePlaygroundAvailable)
+#else
                     ContentView()
+#endif
                 }
             }
             .task {
 #if os(iOS)
                 await checkPlaygroundAvailability()
 #endif
-            }
-            .alert(
-                "Image Playground Unavailable",
-                isPresented: $showPlaygroundWarning
-            ) {
-                Button("OK", role: .cancel) {}
-            } message: {
-                Text(
-                    "Apple Image Playground is not installed or enabled. Image generation on device will not work; only image descriptions will be available."
-                )
             }
         }
     }
@@ -44,14 +40,12 @@ struct GenAICamApp: App {
         if #available(iOS 18.0, *) {
             let generator = PlaygroundImageGenerator()
             let available = await generator.isImagePlaygroundAvailable()
-            if !available {
-                showPlaygroundWarning = true
-            }
+            isImagePlaygroundAvailable = available
         } else {
-            showPlaygroundWarning = true
+            isImagePlaygroundAvailable = false
         }
 #else
-        showPlaygroundWarning = true
+        isImagePlaygroundAvailable = false
 #endif
 #endif
     }
