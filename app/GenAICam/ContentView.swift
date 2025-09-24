@@ -89,14 +89,10 @@ struct ContentView: View {
     @AppStorage("stableDiffusionStepCount") private var stableDiffusionStepCount: Int = 25
     @AppStorage("stableDiffusionGuidance") private var stableDiffusionGuidance: Double = 7.5
     @AppStorage("stableDiffusionStrength") private var stableDiffusionStrength: Double = 0.5
-    @AppStorage("stableDiffusionStyle") private var stableDiffusionStyleRawValue: String = StableDiffusionStyle.photoRealistic.rawValue
+    @AppStorage("stableDiffusionStyle") private var stableDiffusionStyle: StableDiffusionStyle = .photoRealistic
     @AppStorage("stableDiffusionStartMode") private var stableDiffusionStartMode: StableDiffusionStartMode = .photo
     @StateObject private var stableDiffusionGenerator = StableDiffusionGenerator()
     @AppStorage("playgroundStyle") private var playgroundStyle: PlaygroundStyle = .sketch
-    private var stableDiffusionStyle: StableDiffusionStyle {
-        get { StableDiffusionStyle(rawValue: stableDiffusionStyleRawValue) ?? .photoRealistic }
-        nonmutating set { stableDiffusionStyleRawValue = newValue.rawValue }
-    }
 #endif
 #if os(iOS) && canImport(ImagePlayground)
     @available(iOS 18.0, *)
@@ -281,10 +277,7 @@ struct ContentView: View {
                 stableDiffusionStepCount: $stableDiffusionStepCount,
                 stableDiffusionGuidance: $stableDiffusionGuidance,
                 stableDiffusionStrength: $stableDiffusionStrength,
-                stableDiffusionStyle: Binding(
-                    get: { stableDiffusionStyle },
-                    set: { stableDiffusionStyle = $0 }
-                ),
+                stableDiffusionStyle: $stableDiffusionStyle,
                 stableDiffusionStartMode: $stableDiffusionStartMode,
                 mode: $descriptionMode,
                 isRealTime: $isRealTime,
@@ -558,9 +551,6 @@ struct ContentView: View {
                 if !trimmedShort.isEmpty {
                     promptComponents.append(trimmedShort)
                 } else if !trimmedLong.isEmpty {
-                    promptComponents.append(trimmedLong)
-                }
-                if !trimmedLong.isEmpty && !trimmedShort.isEmpty && trimmedLong != trimmedShort {
                     promptComponents.append(trimmedLong)
                 }
                 let prompt = promptComponents.joined(separator: ", ")
