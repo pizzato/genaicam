@@ -172,7 +172,7 @@ struct SettingsView: View {
         stableDiffusionStepCount: .constant(25),
         stableDiffusionGuidance: .constant(7.5),
         stableDiffusionStrength: .constant(0.5),
-        stableDiffusionStyle: .constant(.photoRealistic),
+        stableDiffusionStyle: .constant(.claymation),
         stableDiffusionStartMode: .constant(.photo),
         mode: .constant(.short),
         isRealTime: .constant(false),

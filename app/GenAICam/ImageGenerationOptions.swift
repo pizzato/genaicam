@@ -151,6 +151,11 @@ enum StableDiffusionStyle: String, CaseIterable, Identifiable {
             return "Playful stop-motion clay characters."
         }
     }
+
+    /// Styles exposed directly in the recreate menu for quick access.
+    static var quickAccessStyles: [StableDiffusionStyle] {
+        [.photoRealistic, .watercolor, .pixelArt, .claymation]
+    }
 }
 
 extension StableDiffusionStyle {
@@ -162,7 +167,7 @@ extension StableDiffusionStyle {
             .lowercased()
 
         if normalized.isEmpty {
-            self = .photoRealistic
+            self = .claymation
             return
         }
 

@@ -89,7 +89,7 @@ struct ContentView: View {
     @AppStorage("stableDiffusionStepCount") private var stableDiffusionStepCount: Int = 25
     @AppStorage("stableDiffusionGuidance") private var stableDiffusionGuidance: Double = 7.5
     @AppStorage("stableDiffusionStrength") private var stableDiffusionStrength: Double = 0.5
-    @AppStorage("stableDiffusionStyle") private var stableDiffusionStyle: StableDiffusionStyle = .photoRealistic
+    @AppStorage("stableDiffusionStyle") private var stableDiffusionStyle: StableDiffusionStyle = .claymation
     @AppStorage("stableDiffusionStartMode") private var stableDiffusionStartMode: StableDiffusionStartMode = .photo
     @StateObject private var stableDiffusionGenerator = StableDiffusionGenerator()
     @AppStorage("playgroundStyle") private var playgroundStyle: PlaygroundStyle = .sketch
@@ -662,6 +662,51 @@ struct ContentView: View {
             })
 #endif
         case .stableDiffusion:
+            items.append(
+                GenerationOption(
+                    id: "divider-sd-style",
+                    title: "",
+                    isSelected: false,
+                    isEnabled: false,
+                    isDivider: true,
+                    action: {}
+                )
+            )
+            items.append(
+                GenerationOption(
+                    id: "style-info",
+                    title: "Style: \(stableDiffusionStyle.title)",
+                    isSelected: false,
+                    isEnabled: false,
+                    action: {}
+                )
+            )
+            let quickStyles = StableDiffusionStyle.quickAccessStyles
+            for style in quickStyles {
+                items.append(
+                    GenerationOption(
+                        id: "style-\(style.rawValue)",
+                        title: style.title,
+                        isSelected: style == stableDiffusionStyle
+                    ) {
+                        if stableDiffusionStyle != style {
+                            stableDiffusionStyle = style
+                            startImageGeneration()
+                        }
+                    }
+                )
+            }
+            if !quickStyles.contains(stableDiffusionStyle) {
+                items.append(
+                    GenerationOption(
+                        id: "style-selected-other",
+                        title: "\(stableDiffusionStyle.title) (Settings)",
+                        isSelected: true,
+                        isEnabled: false,
+                        action: {}
+                    )
+                )
+            }
             items.append(
                 GenerationOption(
                     id: "divider-sd-start",
