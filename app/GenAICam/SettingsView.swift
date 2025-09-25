@@ -12,7 +12,7 @@ struct SettingsView: View {
     @Binding var stableDiffusionStepCount: Int
     @Binding var stableDiffusionGuidance: Double
     @Binding var stableDiffusionStrength: Double
-    @Binding var stableDiffusionPromptSuffix: String
+    @Binding var stableDiffusionStyle: StableDiffusionStyle
     @Binding var stableDiffusionStartMode: StableDiffusionStartMode
     @Binding var mode: DescriptionMode
     @Binding var isRealTime: Bool
@@ -101,8 +101,8 @@ struct SettingsView: View {
                             }
                             Slider(
                                 value: $stableDiffusionGuidance,
-                                in: 1...15,
-                                step: 0.5
+                                in: 0.5...15,
+                                step: 0.1
                             )
                             Text("Higher guidance keeps results closer to the description while lower values allow more variety.")
                                 .font(.footnote)
@@ -135,12 +135,15 @@ struct SettingsView: View {
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                             .padding(.vertical, 4)
-                        TextField("Additional prompt text", text: $stableDiffusionPromptSuffix)
-#if os(iOS)
-                            .textInputAutocapitalization(.never)
-                            .autocorrectionDisabled()
-#endif
-                        Text("Appended to the long description when generating Stable Diffusion images.")
+                        Picker("Style", selection: $stableDiffusionStyle) {
+                            ForEach(StableDiffusionStyle.allCases) { option in
+                                Text(option.title).tag(option)
+                            }
+                        }
+                        Text(stableDiffusionStyle.description)
+                            .font(.footnote)
+                            .foregroundStyle(.secondary)
+                        Text("Applied to the beginning of the Stable Diffusion prompt.")
                             .font(.footnote)
                             .foregroundStyle(.secondary)
                     }
@@ -166,10 +169,10 @@ struct SettingsView: View {
     SettingsView(
         style: .constant(.sketch),
         provider: .constant(.stableDiffusion),
-        stableDiffusionStepCount: .constant(25),
-        stableDiffusionGuidance: .constant(7.5),
-        stableDiffusionStrength: .constant(0.5),
-        stableDiffusionPromptSuffix: .constant("photo, high quality, 8k"),
+        stableDiffusionStepCount: .constant(30),
+        stableDiffusionGuidance: .constant(0.8),
+        stableDiffusionStrength: .constant(0.35),
+        stableDiffusionStyle: .constant(.claymation),
         stableDiffusionStartMode: .constant(.photo),
         mode: .constant(.short),
         isRealTime: .constant(false),

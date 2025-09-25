@@ -44,6 +44,19 @@ struct ContentView: View {
 
     init(isImagePlaygroundAvailable: Bool = true) {
         self.isImagePlaygroundAvailable = isImagePlaygroundAvailable
+
+#if os(iOS)
+        let defaults = UserDefaults.standard
+        if defaults.string(forKey: "stableDiffusionStyle") == nil {
+            if let legacy = defaults.string(forKey: "stableDiffusionPromptSuffix"),
+               let mapped = StableDiffusionStyle(legacyPromptSuffix: legacy) {
+                defaults.set(mapped.rawValue, forKey: "stableDiffusionStyle")
+            }
+        }
+        if defaults.object(forKey: "stableDiffusionPromptSuffix") != nil {
+            defaults.removeObject(forKey: "stableDiffusionPromptSuffix")
+        }
+#endif
     }
 
     @State private var camera = CameraController()
@@ -73,10 +86,10 @@ struct ContentView: View {
     @State private var generationStatus: String?
     @State private var generationTask: Task<Void, Never>?
     @AppStorage("imageGeneratorProvider") private var imageGeneratorProvider: ImageGeneratorProvider = .stableDiffusion
-    @AppStorage("stableDiffusionStepCount") private var stableDiffusionStepCount: Int = 25
-    @AppStorage("stableDiffusionGuidance") private var stableDiffusionGuidance: Double = 7.5
-    @AppStorage("stableDiffusionStrength") private var stableDiffusionStrength: Double = 0.5
-    @AppStorage("stableDiffusionPromptSuffix") private var stableDiffusionPromptSuffix: String = "photo, high quality, 8k"
+    @AppStorage("stableDiffusionStepCount") private var stableDiffusionStepCount: Int = 30
+    @AppStorage("stableDiffusionGuidance") private var stableDiffusionGuidance: Double = 0.8
+    @AppStorage("stableDiffusionStrength") private var stableDiffusionStrength: Double = 0.35
+    @AppStorage("stableDiffusionStyle") private var stableDiffusionStyle: StableDiffusionStyle = .claymation
     @AppStorage("stableDiffusionStartMode") private var stableDiffusionStartMode: StableDiffusionStartMode = .photo
     @StateObject private var stableDiffusionGenerator = StableDiffusionGenerator()
     @AppStorage("playgroundStyle") private var playgroundStyle: PlaygroundStyle = .sketch
@@ -264,7 +277,7 @@ struct ContentView: View {
                 stableDiffusionStepCount: $stableDiffusionStepCount,
                 stableDiffusionGuidance: $stableDiffusionGuidance,
                 stableDiffusionStrength: $stableDiffusionStrength,
-                stableDiffusionPromptSuffix: $stableDiffusionPromptSuffix,
+                stableDiffusionStyle: $stableDiffusionStyle,
                 stableDiffusionStartMode: $stableDiffusionStartMode,
                 mode: $descriptionMode,
                 isRealTime: $isRealTime,
@@ -512,13 +525,13 @@ struct ContentView: View {
                     return
                 }
 
-                let descriptions = await MainActor.run { () -> (String, String, String) in
+                let descriptions = await MainActor.run { () -> (String, String, StableDiffusionStyle) in
                     let trimmedLong = self.longDescription.trimmingCharacters(in: .whitespacesAndNewlines)
                     let trimmedShort = self.shortDescription.trimmingCharacters(in: .whitespacesAndNewlines)
-                    let promptSuffix = self.stableDiffusionPromptSuffix.trimmingCharacters(in: .whitespacesAndNewlines)
-                    return (trimmedLong, trimmedShort, promptSuffix)
+                    let style = self.stableDiffusionStyle
+                    return (trimmedLong, trimmedShort, style)
                 }
-                let (trimmedLong, trimmedShort, promptSuffix) = descriptions
+                let (trimmedLong, trimmedShort, style) = descriptions
                 let generationInputs = await MainActor.run { () -> (StableDiffusionStartMode, UIImage?) in
                     (self.stableDiffusionStartMode, self.capturedImage)
                 }
@@ -530,14 +543,18 @@ struct ContentView: View {
                     print("[Generation] Stable Diffusion postponed: waiting for description.")
                     return
                 }
-                let basePrompt = !trimmedLong.isEmpty ? trimmedLong : trimmedShort
-                let prompt: String
-                if promptSuffix.isEmpty {
-                    prompt = basePrompt
-                } else {
-                    prompt = "\(basePrompt) \(promptSuffix)"
-                    print("[Generation] Appending Stable Diffusion prompt suffix: \(promptSuffix)")
+                var promptComponents: [String] = []
+                let stylePrompt = style.prompt.trimmingCharacters(in: .whitespacesAndNewlines)
+                if !stylePrompt.isEmpty {
+                    promptComponents.append(stylePrompt)
                 }
+                if !trimmedShort.isEmpty {
+                    promptComponents.append(trimmedShort)
+                } else if !trimmedLong.isEmpty {
+                    promptComponents.append(trimmedLong)
+                }
+                let prompt = promptComponents.joined(separator: ", ")
+                print("[Generation] Applying Stable Diffusion style: \(style.title).")
 
                 do {
                     print("[Generation] Passing prompt to Stable Diffusion (\(prompt.count) chars).")
@@ -645,6 +662,51 @@ struct ContentView: View {
             })
 #endif
         case .stableDiffusion:
+            items.append(
+                GenerationOption(
+                    id: "divider-sd-style",
+                    title: "",
+                    isSelected: false,
+                    isEnabled: false,
+                    isDivider: true,
+                    action: {}
+                )
+            )
+            items.append(
+                GenerationOption(
+                    id: "style-info",
+                    title: "Style: \(stableDiffusionStyle.title)",
+                    isSelected: false,
+                    isEnabled: false,
+                    action: {}
+                )
+            )
+            let quickStyles = StableDiffusionStyle.quickAccessStyles
+            for style in quickStyles {
+                items.append(
+                    GenerationOption(
+                        id: "style-\(style.rawValue)",
+                        title: style.title,
+                        isSelected: style == stableDiffusionStyle
+                    ) {
+                        if stableDiffusionStyle != style {
+                            stableDiffusionStyle = style
+                            startImageGeneration()
+                        }
+                    }
+                )
+            }
+            if !quickStyles.contains(stableDiffusionStyle) {
+                items.append(
+                    GenerationOption(
+                        id: "style-selected-other",
+                        title: "\(stableDiffusionStyle.title) (Settings)",
+                        isSelected: true,
+                        isEnabled: false,
+                        action: {}
+                    )
+                )
+            }
             items.append(
                 GenerationOption(
                     id: "divider-sd-start",
