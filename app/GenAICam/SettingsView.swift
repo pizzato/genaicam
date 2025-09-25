@@ -101,8 +101,8 @@ struct SettingsView: View {
                             }
                             Slider(
                                 value: $stableDiffusionGuidance,
-                                in: 1...15,
-                                step: 0.5
+                                in: 0.5...15,
+                                step: 0.1
                             )
                             Text("Higher guidance keeps results closer to the description while lower values allow more variety.")
                                 .font(.footnote)
@@ -169,9 +169,9 @@ struct SettingsView: View {
     SettingsView(
         style: .constant(.sketch),
         provider: .constant(.stableDiffusion),
-        stableDiffusionStepCount: .constant(25),
-        stableDiffusionGuidance: .constant(7.5),
-        stableDiffusionStrength: .constant(0.5),
+        stableDiffusionStepCount: .constant(30),
+        stableDiffusionGuidance: .constant(0.8),
+        stableDiffusionStrength: .constant(0.35),
         stableDiffusionStyle: .constant(.claymation),
         stableDiffusionStartMode: .constant(.photo),
         mode: .constant(.short),

@@ -86,9 +86,9 @@ struct ContentView: View {
     @State private var generationStatus: String?
     @State private var generationTask: Task<Void, Never>?
     @AppStorage("imageGeneratorProvider") private var imageGeneratorProvider: ImageGeneratorProvider = .stableDiffusion
-    @AppStorage("stableDiffusionStepCount") private var stableDiffusionStepCount: Int = 25
-    @AppStorage("stableDiffusionGuidance") private var stableDiffusionGuidance: Double = 7.5
-    @AppStorage("stableDiffusionStrength") private var stableDiffusionStrength: Double = 0.5
+    @AppStorage("stableDiffusionStepCount") private var stableDiffusionStepCount: Int = 30
+    @AppStorage("stableDiffusionGuidance") private var stableDiffusionGuidance: Double = 0.8
+    @AppStorage("stableDiffusionStrength") private var stableDiffusionStrength: Double = 0.35
     @AppStorage("stableDiffusionStyle") private var stableDiffusionStyle: StableDiffusionStyle = .claymation
     @AppStorage("stableDiffusionStartMode") private var stableDiffusionStartMode: StableDiffusionStartMode = .photo
     @StateObject private var stableDiffusionGenerator = StableDiffusionGenerator()
